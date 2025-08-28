@@ -138,15 +138,27 @@
             dashboardSection.style.display = 'none';
         }
 
-        // --- EVENTOS DE BOTÕES ---
-        loginBtn.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => console.error(error));
-        });
+// --- EVENTOS DE BOTÕES ---
+loginBtn.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // ALTERADO: Usar signInWithRedirect em vez de signInWithPopup
+    auth.signInWithRedirect(provider);
+});
 
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut();
-        });
+logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+});
+
+// NOVO: Código para processar o resultado após o redirecionamento
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            console.log("Login via redirect bem-sucedido!", result.user);
+        }
+    })
+    .catch((error) => {
+        console.error("Erro no getRedirectResult:", error);
+    });
     </script>
 </body>
 </html>
