@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Autenticando...</title>
+    <style>body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }</style>
+</head>
+<body>
+    <h2>Aguarde, autenticando...</h2>
+    <p>Você será redirecionado em breve.</p>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_REAL",
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const URL_INTRANET = 'https://sites.google.com/eupsico.org.br/interno/intranet-eupsico'; // URL para onde voltar após o login
+
+        // Tenta pegar o resultado do login
+        auth.getRedirectResult()
+            .then((result) => {
+                if (result.user) {
+                    // Login bem-sucedido, volta para a intranet
+                    window.location.href = URL_INTRANET;
+                } else {
+                    // Se não há resultado, significa que precisamos iniciar o login
+                    auth.onAuthStateChanged((user) => {
+                        if (!user) {
+                            // Se o estado confirma que não há usuário, redireciona para o Google
+                            const provider = new firebase.auth.GoogleAuthProvider();
+                            auth.signInWithRedirect(provider);
+                        } else {
+                            // Se já havia um usuário logado (ex: aba anterior), volta para a intranet
+                            window.location.href = URL_INTRANET;
+                        }
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error("Erro de autenticação:", error);
+                document.body.innerHTML = `<h2>Erro ao autenticar</h2><p>${error.message}</p>`;
+            });
+    </script>
+</body>
+</html>
