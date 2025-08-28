@@ -1,0 +1,117 @@
+<div class="container">
+    <h1>Configurações Gerais do Financeiro</h1>
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'GestaoUsuarios')" id="defaultOpen">Gestão de Usuários</button>
+    </div>
+
+    <div id="GestaoUsuarios" class="tabcontent">
+        <h2>Gestão de Usuários</h2>
+        <p>Adicione ou edite os dados de um usuário no sistema. O e-mail deve corresponder ao usado para login.</p>
+        <div class="button-bar">
+            <button class="action-button add-row-btn" id="add-usuario-btn">Adicionar Usuário</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table id="usuarios-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th><th>E-mail (Login)</th><th>Telefone</th><th>Funções</th><th>Inativo?</th><th style="min-width: 220px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="add-user-modal" class="modal">
+    </div>
+
+<div id="toast-container"></div>
+
+<style>
+    /* Cole aqui os estilos do seu arquivo de configurações original */
+    body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 15px; }
+    h1 { text-align: center; color: #004a7f; padding: 20px 0; margin: 0; }
+    /* ... cole o resto do seu CSS aqui ... */
+</style>
+
+<script>
+    // As variáveis `db` e `auth` já existem (foram declaradas no index.html)
+    const usuariosCollection = db.collection('usuarios');
+
+    function renderTable(usuariosList) {
+        const tableBody = document.querySelector('#usuarios-table tbody');
+        if (!tableBody) return;
+        tableBody.innerHTML = ''; // Limpa a tabela
+        
+        usuariosList.forEach(user => {
+            const row = tableBody.insertRow();
+            const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
+            row.innerHTML = `
+                <td><input type="text" value="${user.nome || ''}" disabled></td>
+                <td><input type="email" value="${user.email || ''}" disabled></td>
+                <td><input type="text" value="${user.contato || ''}" disabled></td>
+                <td><input type="text" value="${funcoesStr}" disabled></td>
+                <td style="text-align: center;"><input type="checkbox" ${user.inativo ? 'checked' : ''} disabled></td>
+                <td>
+                    <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
+                    <button class="action-button save-row-btn" data-id="${user.id}" style="display:none;">Salvar</button>
+                    <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
+                </td>
+            `;
+        });
+    }
+
+    function loadUsuarios() {
+        usuariosCollection.orderBy('nome').onSnapshot(snapshot => {
+            const usuariosList = [];
+            snapshot.forEach(doc => {
+                usuariosList.push({ id: doc.id, ...doc.data() });
+            });
+            renderTable(usuariosList);
+        }, error => {
+            console.error("Erro ao carregar usuários: ", error);
+        });
+    }
+    
+    // **Lógica de Adicionar/Editar/Excluir (adaptada para Firestore)**
+    // Você precisará adaptar os listeners dos seus botões para usar os métodos do Firestore
+    // Exemplo para exclusão:
+    document.getElementById('usuarios-table').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-row-btn')) {
+            const userId = e.target.dataset.id;
+            if (confirm('Tem certeza que deseja excluir este usuário?')) {
+                usuariosCollection.doc(userId).delete()
+                    .then(() => showToast('Usuário excluído com sucesso!', 'success'))
+                    .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+            }
+        }
+        // Adapte a lógica de 'Editar' e 'Salvar' da mesma forma
+    });
+
+    // Função para salvar novo usuário (apenas no Firestore)
+    // ATENÇÃO: A criação do usuário no Firebase AUTHENTICATION deve ser feita
+    // de forma segura, preferencialmente via Cloud Function, ou manualmente no Console.
+    // Esta função apenas cria o registro de dados no Firestore.
+    async function saveNewUserToFirestore(userData) {
+        try {
+            // Verifica se já existe um usuário com o mesmo email
+            const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
+            if (!snapshot.empty) {
+                throw new Error('Já existe um usuário com este e-mail.');
+            }
+            await usuariosCollection.add(userData);
+            showToast('Dados do usuário salvos com sucesso no Firestore!', 'success');
+        } catch (error) {
+            showToast('Erro: ' + error.message, 'error');
+        }
+    }
+
+
+    // Ative as funções de sua página aqui
+    document.getElementById("defaultOpen").click();
+    loadUsuarios();
+    
+    // Cole o resto do seu JS original aqui (lógica de abas, toast, modal, etc.)
+    // Lembre-se de adaptar as funções de salvar e editar para usar Firestore.
+</script>
