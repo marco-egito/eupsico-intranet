@@ -43,108 +43,88 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-    <script>
-        // !!!!! IMPORTANTE !!!!!
-        // Substitua pela SUA configuração real do Firebase
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY", // GARANTA QUE SUA API KEY REAL ESTÁ AQUI
-            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-            projectId: "eupsico-agendamentos-d2048",
-            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
-            messagingSenderId: "1041518416343",
-            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
-        };
+  <script>
+    const firebaseConfig = {
+          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+          projectId: "eupsico-agendamentos-d2048",
+          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+          messagingSenderId: "1041518416343",
+          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+    };
 
-        // --- INICIALIZAÇÃO E REFERÊNCIAS ---
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    // --- INICIALIZAÇÃO E REFERÊNCIAS ---
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    // ATENÇÃO: URL para a NOVA página de login que criamos no GitHub Pages
+    const URL_PAGINA_LOGIN = 'https://marco-egito.github.io/eupsico-intranet/login.html';
+    
+    const dashboardSection = document.getElementById('dashboard-section');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userPhoto = document.getElementById('user-photo');
+    const userName = document.getElementById('user-name');
+    const navLinks = document.getElementById('nav-links');
+    
+    const linksPorFuncao = {
+        'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
+        'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
+        'rh': { titulo: '👥 Recursos Humanos', url: '/rh' },
+        'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
+        'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
+    };
+    const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
 
-        const loginSection = document.getElementById('login-section');
-        const dashboardSection = document.getElementById('dashboard-section');
-        const loginBtn = document.getElementById('login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const userPhoto = document.getElementById('user-photo');
-        const userName = document.getElementById('user-name');
-        const navLinks = document.getElementById('nav-links');
+    // --- LÓGICA PRINCIPAL ---
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userDoc = await db.collection('usuarios').doc(user.uid).get();
+            if (userDoc.exists) {
+                const funcoes = userDoc.data().funcoes || [];
+                renderDashboard(user, funcoes);
+            } else {
+                alert('Acesso negado. Este usuário não está autorizado na base de dados.');
+                auth.signOut(); // Desloga o usuário não autorizado
+            }
+        } else {
+            // Usuário não está logado, redireciona PARA A PÁGINA DE LOGIN
+            window.top.location.href = URL_PAGINA_LOGIN;
+        }
+    });
 
-        // --- MAPEAMENTO DE FUNÇÕES PARA LINKS ---
-        const linksPorFuncao = {
-            'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
-            'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
-            'rh': { titulo: '👥 Recursos Humanos', url: '/rh' },
-            'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
-            'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
-        };
-        // CORREÇÃO DA URL BASE
-        const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
+    function renderDashboard(user, funcoes) {
+        userName.textContent = user.displayName;
+        userPhoto.src = user.photoURL;
+        navLinks.innerHTML = ''; 
 
-        // --- LÓGICA PRINCIPAL ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                if (userDoc.exists) {
-                    const funcoes = userDoc.data().funcoes || [];
-                    renderDashboard(user, funcoes);
-                } else {
-                    alert('Acesso negado. Este usuário não está autorizado.');
-                    auth.signOut();
+        const linksParaMostrar = new Set();
+        if (funcoes.includes('admin')) {
+            Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
+        } else {
+            funcoes.forEach(funcao => {
+                if (linksPorFuncao[funcao]) {
+                    linksParaMostrar.add(linksPorFuncao[funcao]);
                 }
-            } else {
-                renderLogin();
-            }
-        });
-
-        function renderDashboard(user, funcoes) {
-            userName.textContent = user.displayName;
-            userPhoto.src = user.photoURL;
-            navLinks.innerHTML = ''; 
-
-            const linksParaMostrar = new Set();
-            if (funcoes.includes('admin')) {
-                Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
-            } else {
-                funcoes.forEach(funcao => {
-                    if (linksPorFuncao[funcao]) {
-                        linksParaMostrar.add(linksPorFuncao[funcao]);
-                    }
-                });
-            }
-
-            linksParaMostrar.forEach(link => {
-                const a = document.createElement('a');
-                a.href = URL_BASE_SITES + link.url;
-                a.textContent = link.titulo;
-                // CORREÇÃO DE NAVEGAÇÃO
-                a.target = '_top'; 
-                navLinks.appendChild(a);
             });
-            
-            loginSection.style.display = 'none';
-            dashboardSection.style.display = 'block';
         }
 
-        function renderLogin() {
-            loginSection.style.display = 'block';
-            dashboardSection.style.display = 'none';
-        }
-
-        // --- EVENTOS DE BOTÕES ---
-        loginBtn.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            // CORREÇÃO PARA IFRAME
-            auth.signInWithRedirect(provider);
+        linksParaMostrar.forEach(link => {
+            const a = document.createElement('a');
+            a.href = URL_BASE_SITES + link.url;
+            a.textContent = link.titulo;
+            a.target = '_top'; 
+            navLinks.appendChild(a);
         });
+        
+        dashboardSection.style.display = 'block';
+    }
 
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut();
-        });
-
-        // CÓDIGO PARA PROCESSAR O RETORNO DO LOGIN
-        auth.getRedirectResult().catch((error) => {
-            console.error("Erro no getRedirectResult:", error);
-        });
-    </script>
+    // --- EVENTO DE LOGOUT ---
+    logoutBtn.addEventListener('click', () => {
+        auth.signOut();
+    });
+</script>
 </body>
 </html>
