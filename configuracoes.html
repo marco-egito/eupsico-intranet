@@ -52,7 +52,6 @@
     </div>
 </div>
 
-
 <style>
     .container { max-width: 1200px; margin: 0 auto; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
     h1 { text-align: center; color: #004a7f; padding: 20px 0; margin: 0; }
@@ -91,7 +90,6 @@
     .toast.toast-error { background-color: #dc3545; }
 </style>
 
-
 <script>
     const usuariosCollection = db.collection('usuarios');
     const userModal = document.getElementById('user-modal');
@@ -102,7 +100,9 @@
         document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
         document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
         document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.classList.add("active");
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add("active");
+        }
     }
 
     function showToast(message, type = 'success') {
@@ -124,7 +124,7 @@
         form.reset();
         document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
         document.getElementById('user-id').value = user ? user.id : '';
-        document.getElementById('user-email').disabled = !!user; // Não permite editar e-mail
+        document.getElementById('user-email').disabled = !!user;
         
         if (user) {
             document.getElementById('user-nome').value = user.nome || '';
@@ -199,10 +199,10 @@
         }
 
         try {
-            if (id) { // Editando usuário existente
+            if (id) {
                 await usuariosCollection.doc(id).update(userData);
                 showToast('Usuário atualizado com sucesso!', 'success');
-            } else { // Adicionando novo usuário
+            } else {
                 const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
                 if (!snapshot.empty) throw new Error('Já existe um usuário com este e-mail.');
                 
