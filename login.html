@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Intranet EuPsico</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .login-container { text-align: center; background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        button { background-color: #004a7f; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; }
+        p { color: #555; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
+        <h2>Intranet EuPsico</h2>
+        <p>Aguarde, estamos verificando sua autenticação...</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM", // SUA API KEY REAL AQUI
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            projectId: "eupsico-agendamentos-d2048",
+            // ...resto da sua config...
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const URL_INTRANET = 'https://sites.google.com/eupsico.org.br/interno/intranet-eupsico';
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Usuário já está logado, redireciona para a intranet
+                window.location.href = URL_INTRANET;
+            } else {
+                // Usuário não está logado, inicia o fluxo de login
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithRedirect(provider);
+            }
+        });
+        
+        // Processa o resultado do login após o retorno do Google
+        auth.getRedirectResult().catch(error => console.error("Erro no login:", error));
+    </script>
+</body>
+</html>
