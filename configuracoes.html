@@ -1,12 +1,13 @@
+<div id="toast-container"></div>
 <div class="container">
-    <h1>Configurações Gerais do Financeiro</h1>
+    <h1>Configurações Gerais</h1>
     <div class="tab">
         <button class="tablinks" onclick="openTab(event, 'GestaoUsuarios')" id="defaultOpen">Gestão de Usuários</button>
-    </div>
+        </div>
 
     <div id="GestaoUsuarios" class="tabcontent">
-        <h2>Gestão de Usuários</h2>
-        <p>Adicione ou edite os dados de um usuário no sistema. O e-mail deve corresponder ao usado para login.</p>
+        <h2>Gestão de Usuários do Sistema</h2>
+        <p>Adicione ou edite os dados de um usuário. O e-mail deve corresponder ao usado para login no Google.</p>
         <div class="button-bar">
             <button class="action-button add-row-btn" id="add-usuario-btn">Adicionar Usuário</button>
         </div>
@@ -23,95 +24,217 @@
     </div>
 </div>
 
-<div id="add-user-modal" class="modal">
+<div id="user-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2 id="modal-title">Adicionar Novo Usuário</h2></div>
+        <div class="modal-body">
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="form-group"><label for="user-nome">Nome Completo</label><input type="text" id="user-nome" required></div>
+                <div class="form-group"><label for="user-email">E-mail (para login)</label><input type="email" id="user-email" required></div>
+                <div class="form-group"><label for="user-tel">Telefone</label><input type="text" id="user-tel" required></div>
+                <div class="form-group checkbox-group">
+                    <h4>Funções de Acesso:</h4>
+                    <label><input type="checkbox" name="funcoes" value="admin"> Admin</label>
+                    <label><input type="checkbox" name="funcoes" value="financeiro"> Financeiro</label>
+                    <label><input type="checkbox" name="funcoes" value="gestor"> Gestor</label>
+                    <label><input type="checkbox" name="funcoes" value="supervisor"> Supervisor</label>
+                </div>
+                <div class="form-group checkbox-group">
+                     <label><input type="checkbox" id="user-inativo"> Marcar como Inativo?</label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button id="modal-cancel-btn" class="action-button" style="background-color: #6c757d;">Cancelar</button>
+            <button id="modal-save-btn" class="action-button" style="background-color: #28a745;">Salvar</button>
+        </div>
     </div>
+</div>
 
-<div id="toast-container"></div>
 
 <style>
-    /* Cole aqui os estilos do seu arquivo de configurações original */
-    body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 15px; }
+    .container { max-width: 1200px; margin: 0 auto; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
     h1 { text-align: center; color: #004a7f; padding: 20px 0; margin: 0; }
-    /* ... cole o resto do seu CSS aqui ... */
+    .tab { overflow: hidden; border-bottom: 1px solid #ccc; background-color: #f1f1f1; }
+    .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px; font-weight: bold; color: #555; }
+    .tab button:hover { background-color: #ddd; }
+    .tab button.active { background-color: #004a7f; color: white; }
+    .tabcontent { display: none; padding: 20px; border-top: none; animation: fadeEffect 0.5s; }
+    @keyframes fadeEffect { from {opacity: 0;} to {opacity: 1;} }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+    input[type="text"], input[type="email"], input[type="number"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1em; }
+    input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; }
+    input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+    .checkbox-group label { display: inline-flex; align-items: center; margin-right: 15px; font-weight: normal; }
+    .checkbox-group h4 { margin-top: 10px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+    thead th { background-color: #e9ecef; }
+    .action-button { border: none; padding: 8px 12px; font-size: 0.9em; font-weight: bold; border-radius: 5px; cursor: pointer; color: white; margin-right: 5px; }
+    .save-btn { background-color: #28a745; float: right; padding: 10px 20px; font-size: 1em; }
+    .add-row-btn { background-color: #007bff; }
+    .delete-row-btn { background-color: #dc3545; }
+    .edit-row-btn { background-color: #ffc107; color: #212529; }
+    .save-row-btn { background-color: #28a745; }
+    .button-bar { margin-bottom: 20px; overflow: hidden; }
+    .button-bar .add-row-btn { float: left; }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; }
+    .modal-header h2 { margin: 0; color: #004a7f; }
+    .modal-footer { padding-top: 15px; border-top: 1px solid #eee; text-align: right; }
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; }
+    .toast { background-color: #333; color: white; padding: 15px 20px; border-radius: 5px; margin-top: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); opacity: 0; transform: translateX(100%); transition: all 0.4s ease; }
+    .toast.show { opacity: 1; transform: translateX(0); }
+    .toast.toast-success { background-color: #28a745; }
+    .toast.toast-error { background-color: #dc3545; }
 </style>
 
-<script>
-    // As variáveis `db` e `auth` já existem (foram declaradas no index.html)
-    const usuariosCollection = db.collection('usuarios');
 
+<script>
+    const usuariosCollection = db.collection('usuarios');
+    const userModal = document.getElementById('user-modal');
+    let localUsuariosList = []; 
+
+    // --- FUNÇÕES UTILITÁRIAS (Toast, Abas, Modal) ---
+    function openTab(evt, tabName) {
+        document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
+        document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+    }
+
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+    }
+
+    function openUserModal(user = null) {
+        const form = document.getElementById('user-form');
+        form.reset();
+        document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
+        document.getElementById('user-id').value = user ? user.id : '';
+        document.getElementById('user-email').disabled = !!user; // Não permite editar e-mail
+        
+        if (user) {
+            document.getElementById('user-nome').value = user.nome || '';
+            document.getElementById('user-email').value = user.email || '';
+            document.getElementById('user-tel').value = user.contato || '';
+            document.getElementById('user-inativo').checked = user.inativo || false;
+            
+            form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
+                checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
+            });
+        }
+        userModal.style.display = 'block';
+    }
+
+    function closeUserModal() {
+        userModal.style.display = 'none';
+    }
+
+    // --- RENDERIZAÇÃO E DADOS (FIRESTORE) ---
     function renderTable(usuariosList) {
         const tableBody = document.querySelector('#usuarios-table tbody');
         if (!tableBody) return;
-        tableBody.innerHTML = ''; // Limpa a tabela
+        tableBody.innerHTML = '';
         
         usuariosList.forEach(user => {
             const row = tableBody.insertRow();
             const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
             row.innerHTML = `
-                <td><input type="text" value="${user.nome || ''}" disabled></td>
-                <td><input type="email" value="${user.email || ''}" disabled></td>
-                <td><input type="text" value="${user.contato || ''}" disabled></td>
-                <td><input type="text" value="${funcoesStr}" disabled></td>
-                <td style="text-align: center;"><input type="checkbox" ${user.inativo ? 'checked' : ''} disabled></td>
+                <td>${user.nome || ''}</td>
+                <td>${user.email || ''}</td>
+                <td>${user.contato || ''}</td>
+                <td>${funcoesStr}</td>
+                <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
                 <td>
                     <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
-                    <button class="action-button save-row-btn" data-id="${user.id}" style="display:none;">Salvar</button>
                     <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
-                </td>
-            `;
+                </td>`;
         });
     }
 
     function loadUsuarios() {
         usuariosCollection.orderBy('nome').onSnapshot(snapshot => {
-            const usuariosList = [];
-            snapshot.forEach(doc => {
-                usuariosList.push({ id: doc.id, ...doc.data() });
-            });
-            renderTable(usuariosList);
+            localUsuariosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderTable(localUsuariosList);
         }, error => {
             console.error("Erro ao carregar usuários: ", error);
+            showToast("Erro ao carregar usuários.", "error");
         });
     }
-    
-    // **Lógica de Adicionar/Editar/Excluir (adaptada para Firestore)**
-    // Você precisará adaptar os listeners dos seus botões para usar os métodos do Firestore
-    // Exemplo para exclusão:
-    document.getElementById('usuarios-table').addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-row-btn')) {
-            const userId = e.target.dataset.id;
-            if (confirm('Tem certeza que deseja excluir este usuário?')) {
-                usuariosCollection.doc(userId).delete()
-                    .then(() => showToast('Usuário excluído com sucesso!', 'success'))
-                    .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
-            }
-        }
-        // Adapte a lógica de 'Editar' e 'Salvar' da mesma forma
-    });
 
-    // Função para salvar novo usuário (apenas no Firestore)
-    // ATENÇÃO: A criação do usuário no Firebase AUTHENTICATION deve ser feita
-    // de forma segura, preferencialmente via Cloud Function, ou manualmente no Console.
-    // Esta função apenas cria o registro de dados no Firestore.
-    async function saveNewUserToFirestore(userData) {
+    // --- EVENT LISTENERS ---
+    document.getElementById('add-usuario-btn').addEventListener('click', () => openUserModal());
+    document.getElementById('modal-cancel-btn').addEventListener('click', closeUserModal);
+    window.addEventListener('click', (event) => { if (event.target == userModal) closeUserModal(); });
+
+    document.getElementById('modal-save-btn').addEventListener('click', async () => {
+        const id = document.getElementById('user-id').value;
+        const funcoesSelecionadas = [];
+        document.querySelectorAll('input[name="funcoes"]:checked').forEach(cb => funcoesSelecionadas.push(cb.value));
+
+        const userData = {
+            nome: document.getElementById('user-nome').value.trim(),
+            email: document.getElementById('user-email').value.trim(),
+            contato: document.getElementById('user-tel').value.trim(),
+            funcoes: funcoesSelecionadas,
+            inativo: document.getElementById('user-inativo').checked,
+        };
+
+        if (!userData.nome || !userData.email) {
+            showToast('Nome e E-mail são obrigatórios.', 'error');
+            return;
+        }
+
         try {
-            // Verifica se já existe um usuário com o mesmo email
-            const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
-            if (!snapshot.empty) {
-                throw new Error('Já existe um usuário com este e-mail.');
+            if (id) { // Editando usuário existente
+                await usuariosCollection.doc(id).update(userData);
+                showToast('Usuário atualizado com sucesso!', 'success');
+            } else { // Adicionando novo usuário
+                const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
+                if (!snapshot.empty) throw new Error('Já existe um usuário com este e-mail.');
+                
+                await usuariosCollection.add(userData);
+                showToast('Usuário adicionado com sucesso!', 'success');
+                alert('IMPORTANTE: O usuário foi criado apenas no banco de dados. Você precisa criar a conta correspondente no Firebase Authentication para que o login funcione.');
             }
-            await usuariosCollection.add(userData);
-            showToast('Dados do usuário salvos com sucesso no Firestore!', 'success');
+            closeUserModal();
         } catch (error) {
             showToast('Erro: ' + error.message, 'error');
         }
-    }
+    });
 
+    document.getElementById('usuarios-table').addEventListener('click', (e) => {
+        const userId = e.target.dataset.id;
+        if (!userId) return;
 
-    // Ative as funções de sua página aqui
+        if (e.target.classList.contains('edit-row-btn')) {
+            const userToEdit = localUsuariosList.find(u => u.id === userId);
+            if(userToEdit) openUserModal(userToEdit);
+        }
+
+        if (e.target.classList.contains('delete-row-btn')) {
+            if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+                usuariosCollection.doc(userId).delete()
+                    .then(() => showToast('Usuário excluído!', 'success'))
+                    .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+            }
+        }
+    });
+
+    // --- INICIALIZAÇÃO DA PÁGINA ---
     document.getElementById("defaultOpen").click();
     loadUsuarios();
-    
-    // Cole o resto do seu JS original aqui (lógica de abas, toast, modal, etc.)
-    // Lembre-se de adaptar as funções de salvar e editar para usar Firestore.
 </script>
