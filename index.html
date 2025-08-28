@@ -3,147 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <title>Intranet EuPsico</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; }
-        .app-container { max-width: 900px; margin: 20px auto; }
-        .content-box { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .view { display: none; } /* Todas as "telas" começam escondidas */
-        #logout-btn { background-color: #6c757d; font-size: 0.8em; padding: 8px 15px; border: none; border-radius: 5px; color: white; cursor: pointer; }
-        .header { display: flex; justify-content: space-between; align-items: center; text-align: left; margin-bottom: 20px; }
-        .header img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
-        .nav-links button { width: 100%; text-align: left; background-color: #e9ecef; margin: 10px 0; padding: 15px; text-decoration: none; color: #333; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 1em; }
-        .nav-links button:hover { background-color: #ced4da; }
-        .back-button { margin-bottom: 20px; font-weight: bold; cursor: pointer; color: #004a7f; }
-    </style>
-</head>
+    </head>
 <body>
     <div class="app-container">
-
         <div id="loading-view" class="content-box view" style="text-align: center;">
             <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
             <h2>Intranet EuPsico</h2>
             <p>Verificando autenticação...</p>
         </div>
-
         <div id="dashboard-view" class="content-box view">
-            <div class="header">
-                <div style="display: flex; align-items: center;"><img id="user-photo" src=""><span id="user-name"></span></div>
-                <button id="logout-btn">Sair</button>
-            </div>
-            <h2>Painel de Acesso</h2>
-            <p>Selecione a área que deseja acessar:</p>
-            <div id="nav-links" class="nav-links"></div>
+             </div>
         </div>
-
-        <div id="financeiro-view" class="content-box view">
-            <p class="back-button" onclick="showView('dashboard-view')">← Voltar ao Painel</p>
-            <h2>Área Financeira</h2>
-            <p>Este é o conteúdo protegido da área financeira.</p>
-            </div>
-
-        <div id="rh-view" class="content-box view">
-            <p class="back-button" onclick="showView('dashboard-view')">← Voltar ao Painel</p>
-            <h2>Recursos Humanos</h2>
-            <p>Este é o conteúdo protegido da área de RH.</p>
-            </div>
-
-    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script>
-        // !!!!! IMPORTANTE !!!!! 
-        // Substitua pela SUA chave de API real, caso ela tenha mudado.
-        const firebaseConfig = {
-          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-          projectId: "eupsico-agendamentos-d2048",
-          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-          messagingSenderId: "1041518416343",
-          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        const URL_AUTHENTICATOR = 'https://marco-egito.github.io/eupsico-intranet/authenticator.html';
-        
-        const views = document.querySelectorAll('.view');
-        const userPhoto = document.getElementById('user-photo');
-        const userName = document.getElementById('user-name');
-        const navLinks = document.getElementById('nav-links');
-        const logoutBtn = document.getElementById('logout-btn');
-
-        function showView(viewId) {
-            views.forEach(v => v.style.display = 'none');
-            const viewToShow = document.getElementById(viewId);
-            if (viewToShow) {
-                viewToShow.style.display = 'block';
-            }
-        }
-
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().funcoes) {
-                    renderDashboard(user, userDoc.data().funcoes);
-                    showView('dashboard-view');
-                } else {
-                    document.body.innerHTML = `<div class="content-box" style="text-align:center; max-width: 800px; margin: 20px auto;"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões cadastradas no sistema. Contate o administrador.</p><br/><button id="logout-btn-denied">Sair</button></div>`;
-                    document.getElementById('logout-btn-denied').onclick = () => auth.signOut();
-                }
-            } else {
-                window.top.location.href = URL_AUTHENTICATOR;
-            }
-        });
-
-        function renderDashboard(user, funcoes) {
-            userName.textContent = user.displayName;
-            userPhoto.src = user.photoURL;
-            navLinks.innerHTML = ''; 
-
-            const funcoesParaTelas = {
-                'admin': { titulo: '⚙️ Acesso Administrativo', view: 'dashboard-view' }, // Admin pode ter uma view especial
-                'financeiro': { titulo: '💰 Acesso Financeiro', view: 'financeiro-view' },
-                'rh': { titulo: '👥 Recursos Humanos', view: 'rh-view' },
+        document.addEventListener('DOMContentLoaded', function() {
+           const firebaseConfig = {
+              apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+              projectId: "eupsico-agendamentos-d2048",
+              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+              messagingSenderId: "1041518416343",
+              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
             };
 
-            const botoesParaMostrar = new Map();
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-            if (funcoes.includes('admin')) {
-                // Admin vê todos os botões
-                for (const funcao in funcoesParaTelas) {
-                    botoesParaMostrar.set(funcao, funcoesParaTelas[funcao]);
-                }
-            } else {
-                // Outros usuários veem apenas os botões de suas funções
-                funcoes.forEach(funcao => {
-                    if (funcoesParaTelas[funcao]) {
-                        botoesParaMostrar.set(funcao, funcoesParaTelas[funcao]);
+            const URL_AUTHENTICATOR = 'https://marco-egito.github.io/eupsico-intranet/authenticator.html';
+            
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    window.top.location.href = URL_AUTHENTICATOR;
+                } else {
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().funcoes) {
+                        // A lógica para renderizar o dashboard entra aqui
+                        // showView('dashboard-view');
+                    } else {
+                        // A lógica para acesso negado entra aqui
                     }
-                });
-            }
-
-            botoesParaMostrar.forEach(config => {
-                const btn = document.createElement('button');
-                btn.textContent = config.titulo;
-                btn.onclick = () => showView(config.view);
-                navLinks.appendChild(btn);
-            });
-        }
-
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut().then(() => {
-                // Após o logout, manda para a autenticação de novo.
-                window.top.location.href = URL_AUTHENTICATOR;
+                }
             });
         });
-
-        // Exibe a tela de carregamento inicial
-        showView('loading-view');
     </script>
 </body>
 </html>
