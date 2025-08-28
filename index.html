@@ -2,14 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard da Intranet - EuPsico</title>
+    <title>Intranet EuPsico</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9; }
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9; text-align: center; }
         .container { max-width: 800px; width: 100%; }
-        .login-container, .dashboard-container { text-align: center; background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        button { background-color: #004a7f; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; transition: background-color 0.2s ease; }
-        button:hover { background-color: #005a87; }
-        #logout-btn { background-color: #6c757d; font-size: 0.8em; padding: 8px 15px; }
+        .dashboard-container, .loading-container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #logout-btn { background-color: #6c757d; font-size: 0.8em; padding: 8px 15px; border: none; border-radius: 5px; color: white; cursor: pointer; }
         .header { display: flex; justify-content: space-between; align-items: center; text-align: left; margin-bottom: 20px; }
         .header img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
         .nav-links a { display: block; background-color: #e9ecef; margin: 10px 0; padding: 15px; text-decoration: none; color: #333; font-weight: bold; border-radius: 5px; transition: background-color 0.2s ease; }
@@ -18,11 +16,9 @@
 </head>
 <body>
     <div class="container">
-        <div id="login-section" style="display: none;">
-            <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
+        <div id="loading-section" class="loading-container">
             <h2>Intranet EuPsico</h2>
-            <p>Por favor, faça login para acessar o painel.</p>
-            <button id="login-btn">Entrar com Google</button>
+            <p>Verificando autenticação, por favor aguarde...</p>
         </div>
 
         <div id="dashboard-section" class="dashboard-container" style="display: none;">
@@ -42,89 +38,99 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_REAL", // GARANTA QUE SUA API KEY REAL ESTÁ AQUI
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
 
-  <script>
-    const firebaseConfig = {
-          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-          projectId: "eupsico-agendamentos-d2048",
-          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-          messagingSenderId: "1041518416343",
-          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-    };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    // --- INICIALIZAÇÃO E REFERÊNCIAS ---
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    
-    // ATENÇÃO: URL para a NOVA página de login que criamos no GitHub Pages
-    const URL_PAGINA_LOGIN = 'https://marco-egito.github.io/eupsico-intranet/login.html';
-    
-    const dashboardSection = document.getElementById('dashboard-section');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userPhoto = document.getElementById('user-photo');
-    const userName = document.getElementById('user-name');
-    const navLinks = document.getElementById('nav-links');
-    
-    const linksPorFuncao = {
-        'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
-        'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
-        'rh': { titulo: '👥 Recursos Humanos', url: '/rh' },
-        'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
-        'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
-    };
-    const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
+        const loadingSection = document.getElementById('loading-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userPhoto = document.getElementById('user-photo');
+        const userName = document.getElementById('user-name');
+        const navLinks = document.getElementById('nav-links');
 
-    // --- LÓGICA PRINCIPAL ---
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const userDoc = await db.collection('usuarios').doc(user.uid).get();
-            if (userDoc.exists) {
-                const funcoes = userDoc.data().funcoes || [];
-                renderDashboard(user, funcoes);
-            } else {
-                alert('Acesso negado. Este usuário não está autorizado na base de dados.');
-                auth.signOut(); // Desloga o usuário não autorizado
-            }
-        } else {
-            // Usuário não está logado, redireciona PARA A PÁGINA DE LOGIN
-            window.top.location.href = URL_PAGINA_LOGIN;
-        }
-    });
+        const linksPorFuncao = {
+            'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
+            'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
+            'rh': { titulo: '👥 Recursos Humanos', url: '/rh' },
+            'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
+            'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
+        };
+        const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
 
-    function renderDashboard(user, funcoes) {
-        userName.textContent = user.displayName;
-        userPhoto.src = user.photoURL;
-        navLinks.innerHTML = ''; 
+        let authCompleted = false; // Flag para evitar loops
 
-        const linksParaMostrar = new Set();
-        if (funcoes.includes('admin')) {
-            Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
-        } else {
-            funcoes.forEach(funcao => {
-                if (linksPorFuncao[funcao]) {
-                    linksParaMostrar.add(linksPorFuncao[funcao]);
+        // --- LÓGICA PRINCIPAL ---
+        auth.onAuthStateChanged(async (user) => {
+            authCompleted = true; // Marca que a verificação inicial terminou
+            if (user) {
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().funcoes) {
+                    renderDashboard(user, userDoc.data().funcoes);
+                } else {
+                    document.getElementById('loading-section').innerHTML = '<h2>Acesso Negado</h2><p>Este usuário não possui permissões no banco de dados.</p>';
+                    auth.signOut();
                 }
-            });
-        }
-
-        linksParaMostrar.forEach(link => {
-            const a = document.createElement('a');
-            a.href = URL_BASE_SITES + link.url;
-            a.textContent = link.titulo;
-             
-            navLinks.appendChild(a);
+            } else {
+                // Usuário não está logado, inicia o fluxo de login
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithRedirect(provider);
+            }
         });
-        
-        dashboardSection.style.display = 'block';
-    }
 
-    // --- EVENTO DE LOGOUT ---
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
-</script>
+        // Este código processa o login QUANDO o usuário volta do Google
+        auth.getRedirectResult()
+            .then((result) => {
+                if (!result.user && !authCompleted) {
+                    // Se não houve resultado e a verificação inicial ainda não rodou,
+                    // pode ser que o usuário precise ser logado.
+                    // A lógica no onAuthStateChanged vai cuidar disso.
+                }
+            })
+            .catch((error) => {
+                console.error("Erro no getRedirectResult:", error);
+                document.getElementById('loading-section').innerHTML = `<h2>Erro de Autenticação</h2><p>${error.message}</p>`;
+            });
+
+
+        function renderDashboard(user, funcoes) {
+            userName.textContent = user.displayName;
+            userPhoto.src = user.photoURL;
+            navLinks.innerHTML = ''; 
+
+            const linksParaMostrar = new Set();
+            if (funcoes.includes('admin')) {
+                Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
+            } else {
+                funcoes.forEach(funcao => {
+                    if (linksPorFuncao[funcao]) linksParaMostrar.add(linksPorFuncao[funcao]);
+                });
+            }
+
+            linksParaMostrar.forEach(link => {
+                const a = document.createElement('a');
+                a.href = URL_BASE_SITES + link.url;
+                a.textContent = link.titulo;
+                a.target = '_top'; 
+                navLinks.appendChild(a);
+            });
+            
+            loadingSection.style.display = 'none';
+            dashboardSection.style.display = 'block';
+        }
+        
+        logoutBtn.addEventListener('click', () => auth.signOut());
+    </script>
 </body>
 </html>
