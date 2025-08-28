@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Autenticando...</title>
-    <style>body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }</style>
+    <style>body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; color: #333; }</style>
 </head>
 <body>
+    <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
     <h2>Aguarde, autenticando...</h2>
     <p>Você será redirecionado em breve.</p>
 
@@ -13,23 +14,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM", // GARANTA QUE A API KEY ESTEJA CORRETA
+            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
             authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-            // ... resto da config ...
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
         };
         
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
+        // URL da sua página principal da intranet no Google Sites
         const URL_INTRANET = 'https://sites.google.com/eupsico.org.br/interno/intranet-eupsico';
 
-        let redirectInitiated = false;
+        let hasRedirected = false; // Flag para evitar loops
 
+        // Esta função é a primeira a ser chamada quando o usuário volta do Google.
         auth.getRedirectResult()
             .then((result) => {
                 if (result.user) {
-                    redirectInitiated = true;
-                    window.location.replace(URL_INTRANET);
+                    // Sucesso! Usuário acabou de logar.
+                    // Não fazemos nada aqui, pois o onAuthStateChanged vai cuidar do redirecionamento.
                 }
             })
             .catch((error) => {
@@ -37,13 +44,21 @@
                 document.body.innerHTML = `<h2>Erro ao autenticar</h2><p>${error.message}</p>`;
             });
 
+        // Este listener é a fonte final da verdade sobre o status do login.
         auth.onAuthStateChanged((user) => {
-            if (user && !redirectInitiated) {
-                redirectInitiated = true;
-                window.location.replace(URL_INTRANET);
-            } else if (!user && !redirectInitiated) {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithRedirect(provider);
+            if (user) {
+                // Se um usuário for detectado, a autenticação está confirmada.
+                if (!hasRedirected) {
+                    hasRedirected = true;
+                    window.location.replace(URL_INTRANET);
+                }
+            } else {
+                // Se, após todas as verificações, NENHUM usuário for encontrado,
+                // significa que precisamos iniciar o processo de login.
+                if (!hasRedirected) {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    auth.signInWithRedirect(provider);
+                }
             }
         });
     </script>
