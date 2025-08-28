@@ -3,51 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <title>Intranet EuPsico</title>
-    </head>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .view { display: none; } /* Esconde todas as seções por padrão */
+        .visible { display: block; } /* Mostra a seção ativa */
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
 <body>
     <div class="app-container">
-        <div id="loading-view" class="content-box view" style="text-align: center;">
+
+        <div id="login-view" class="view">
             <h2>Intranet EuPsico</h2>
+            <p>Por favor, faça login para continuar.</p>
+            <button id="login-button">Login com Google</button>
+        </div>
+
+        <div id="loading-view" class="view">
             <p>Verificando autenticação...</p>
         </div>
-        <div id="dashboard-view" class="content-box view">
-             </div>
+        
+        <div id="dashboard-view" class="view">
+            <h1>Bem-vindo(a) à Intranet!</h1>
+            <p>Seu conteúdo exclusivo está aqui.</p>
+            <button id="logout-button">Sair</button>
         </div>
+
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-           const firebaseConfig = {
-              apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-              projectId: "eupsico-agendamentos-d2048",
-              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-              messagingSenderId: "1041518416343",
-              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-            };
+            // !! IMPORTANTE: Use o MESMO firebaseConfig em todos os lugares !!
+        const firebaseConfig = {
+          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+          projectId: "eupsico-agendamentos-d2048",
+          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+          messagingSenderId: "1041518416343",
+          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+        };
 
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            const URL_AUTHENTICATOR = 'https://marco-egito.github.io/eupsico-intranet/authenticator.html';
-            
+            const loginView = document.getElementById('login-view');
+            const loadingView = document.getElementById('loading-view');
+            const dashboardView = document.getElementById('dashboard-view');
+            const loginButton = document.getElementById('login-button');
+            const logoutButton = document.getElementById('logout-button');
+
+            // Função para mostrar a view correta
+            function showView(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
+                document.getElementById(viewId).classList.add('visible');
+            }
+
+            // Monitora o estado da autenticação
             auth.onAuthStateChanged(async (user) => {
-                if (!user) {
-                    window.top.location.href = URL_AUTHENTICATOR;
-                } else {
+                if (user) {
+                    // Usuário está logado
+                    console.log("Usuário logado:", user.email);
+                    
+                    // Opcional: Verificar permissões no Firestore
                     const userDoc = await db.collection('usuarios').doc(user.uid).get();
                     if (userDoc.exists && userDoc.data().funcoes) {
-                        // A lógica para renderizar o dashboard entra aqui
-                        // showView('dashboard-view');
+                        showView('dashboard-view'); // Mostra o conteúdo principal
                     } else {
-                        // A lógica para acesso negado entra aqui
+                        // Usuário autenticado, mas sem permissão
+                        document.body.innerHTML = `<h2>Acesso Negado</h2><p>Você não tem permissão para acessar esta área.</p>`;
                     }
+                } else {
+                    // Usuário não está logado
+                    console.log("Nenhum usuário logado.");
+                    showView('login-view'); // Mostra a tela de login
                 }
             });
+
+            // Ação do botão de login
+            loginButton.addEventListener('click', () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => {
+                    console.error("Erro durante o login com popup:", error);
+                    alert("Ocorreu um erro ao tentar fazer login: " + error.message);
+                });
+            });
+
+            // Ação do botão de logout
+            logoutButton.addEventListener('click', () => {
+                auth.signOut();
+            });
+
+            // Inicia mostrando a tela de carregamento
+            showView('loading-view');
         });
     </script>
 </body>
