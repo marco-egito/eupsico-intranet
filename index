@@ -5,25 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Financeiro - EuPsico</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4fs9; margin: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; color: #333; }
         .main-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 220px; background-color: #004a7f; color: white; padding: 15px; }
+        .sidebar { width: 240px; background-color: #004a7f; color: white; padding: 15px; flex-shrink: 0; }
         .sidebar h2 { text-align: center; }
         .sidebar ul { list-style: none; padding: 0; }
         .sidebar ul li button {
             width: 100%; background: none; border: none; color: white; padding: 12px; text-align: left;
-            cursor: pointer; font-size: 1em; border-radius: 5px;
+            cursor: pointer; font-size: 1em; border-radius: 5px; transition: background-color 0.2s;
         }
         .sidebar ul li button:hover, .sidebar ul li button.active { background-color: #005a87; }
         .content { flex-grow: 1; padding: 20px; }
-        #app-container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #app-container { min-height: 80vh; } /* Garante que o container tenha uma altura mínima */
         .hidden { display: none; }
+        .auth-view { text-align: center; padding-top: 50px; }
+        .auth-view button { padding: 10px 20px; font-size: 1em; cursor: pointer; background-color: #007bff; color:white; border:none; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="auth-view" style="text-align: center; padding-top: 50px;">
-        <h2>Painel Financeiro</h2>
+    <div id="auth-view" class="auth-view">
+        <h2>Painel Financeiro EuPsico</h2>
         <p id="auth-message">Verificando autenticação...</p>
         <button id="login-button" class="hidden">Login com Google</button>
     </div>
@@ -33,7 +35,7 @@
             <h2>Financeiro</h2>
             <ul>
                 <li><button class="nav-button" data-page="dashboard_financeiro.html">Dashboard</button></li>
-                <li><button class="nav-button" data-page="lancamentos.html">Lançamentos</button></li>
+                <li><button class="nav-button" data-page="lancamentos_financeiros.html">Lançamentos</button></li>
                 <li><button class="nav-button" data-page="cobranca_mensal.html">Cobrança Mensal</button></li>
                 <li><button class="nav-button" data-page="controle_pagamentos.html">Controle de Pagamentos</button></li>
                 <li><button class="nav-button" data-page="resumo_horas.html">Resumo de Horas</button></li>
@@ -41,7 +43,7 @@
                 <li><button class="nav-button" data-page="acordos.html">Acordos</button></li>
                 <li><button class="nav-button" data-page="repasse_profissionais.html">Repasse Profissionais</button></li>
                 <li><button class="nav-button" data-page="envio_comprovantes.html">Envio de Comprovantes</button></li>
-                <hr>
+                <hr style="border-color: #005a87;">
                 <li><button class="nav-button" data-page="configuracoes.html">Configurações</button></li>
                 <li><button class="nav-button" data-page="relatorios_backup.html">Relatórios e Backup</button></li>
             </ul>
@@ -54,13 +56,11 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
     <script>
-        // Use a mesma configuração em todas as suas páginas
         const firebaseConfig = {
             apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
             authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
@@ -81,17 +81,15 @@
         const logoutButton = document.getElementById('logout-button');
         const appContainer = document.getElementById('app-container');
 
-        // Função para carregar o conteúdo da página
         async function loadPage(page) {
             try {
                 appContainer.innerHTML = 'Carregando...';
                 const response = await fetch(page);
-                if (!response.ok) throw new Error('Página não encontrada.');
+                if (!response.ok) throw new Error(`Página não encontrada (${response.status})`);
                 
                 const pageContent = await response.text();
                 appContainer.innerHTML = pageContent;
 
-                // Executa os scripts da página carregada
                 const scripts = appContainer.querySelectorAll('script');
                 scripts.forEach(script => {
                     const newScript = document.createElement('script');
@@ -104,22 +102,19 @@
             }
         }
 
-        // Lógica de Autenticação
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                const funcoes = userDoc.exists ? userDoc.data().funcoes : [];
+                const funcoes = userDoc.exists ? userDoc.data().funcoes || [] : [];
 
-                // Somente admin ou financeiro podem acessar
                 if (funcoes.includes('admin') || funcoes.includes('financeiro')) {
                     authView.classList.add('hidden');
                     appView.classList.remove('hidden');
-                    // Carrega a primeira página por padrão
                     document.querySelector('.nav-button').click(); 
                 } else {
                     authView.classList.remove('hidden');
                     appView.classList.add('hidden');
-                    document.getElementById('auth-message').innerText = 'Acesso Negado. Você não tem permissão.';
+                    document.getElementById('auth-message').innerText = 'Acesso Negado. Você não tem permissão para acessar este painel.';
                 }
             } else {
                 authView.classList.remove('hidden');
@@ -129,7 +124,6 @@
             }
         });
 
-        // Event Listeners
         loginButton.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider);
@@ -145,7 +139,6 @@
                 loadPage(pageFile);
             });
         });
-
     </script>
 </body>
 </html>
