@@ -20,6 +20,7 @@
     <div class="app-container">
 
         <div id="loading-view" class="content-box view" style="text-align: center;">
+            <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
             <h2>Intranet EuPsico</h2>
             <p>Verificando autenticação...</p>
         </div>
@@ -40,13 +41,30 @@
             <p>Este é o conteúdo protegido da área financeira.</p>
             </div>
 
-        </div>
+        <div id="rh-view" class="content-box view">
+            <p class="back-button" onclick="showView('dashboard-view')">← Voltar ao Painel</p>
+            <h2>Recursos Humanos</h2>
+            <p>Este é o conteúdo protegido da área de RH.</p>
+            </div>
+
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script>
-        const firebaseConfig = { apiKey: "SUA_API_KEY_REAL", authDomain: "eupsico-agendamentos-d2048.firebaseapp.com", /* ...resto da config... */ };
+        // !!!!! IMPORTANTE !!!!! 
+        // Substitua pela SUA chave de API real, caso ela tenha mudado.
+        const firebaseConfig = {
+          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+          projectId: "eupsico-agendamentos-d2048",
+          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+          messagingSenderId: "1041518416343",
+          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+        };
+        
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -61,7 +79,10 @@
 
         function showView(viewId) {
             views.forEach(v => v.style.display = 'none');
-            document.getElementById(viewId).style.display = 'block';
+            const viewToShow = document.getElementById(viewId);
+            if (viewToShow) {
+                viewToShow.style.display = 'block';
+            }
         }
 
         auth.onAuthStateChanged(async (user) => {
@@ -71,8 +92,8 @@
                     renderDashboard(user, userDoc.data().funcoes);
                     showView('dashboard-view');
                 } else {
-                    document.body.innerHTML = `<div class="content-box" style="text-align:center;"><h2>Acesso Negado</h2><p>Usuário não autorizado.</p></div>`;
-                    auth.signOut();
+                    document.body.innerHTML = `<div class="content-box" style="text-align:center; max-width: 800px; margin: 20px auto;"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões cadastradas no sistema. Contate o administrador.</p><br/><button id="logout-btn-denied">Sair</button></div>`;
+                    document.getElementById('logout-btn-denied').onclick = () => auth.signOut();
                 }
             } else {
                 window.top.location.href = URL_AUTHENTICATOR;
@@ -85,27 +106,40 @@
             navLinks.innerHTML = ''; 
 
             const funcoesParaTelas = {
-                'admin': ['dashboard-view', 'financeiro-view' /*, 'rh-view', etc */],
-                'financeiro': ['dashboard-view', 'financeiro-view'],
-                'rh': ['dashboard-view' /*, 'rh-view'*/]
+                'admin': { titulo: '⚙️ Acesso Administrativo', view: 'dashboard-view' }, // Admin pode ter uma view especial
+                'financeiro': { titulo: '💰 Acesso Financeiro', view: 'financeiro-view' },
+                'rh': { titulo: '👥 Recursos Humanos', view: 'rh-view' },
             };
 
-            const telasPermitidas = new Set();
-            funcoes.forEach(f => {
-                if(funcoesParaTelas[f]) funcoesParaTelas[f].forEach(tela => telasPermitidas.add(tela));
-            });
+            const botoesParaMostrar = new Map();
 
-            if (telasPermitidas.has('financeiro-view')) {
-                const btn = document.createElement('button');
-                btn.textContent = '💰 Acesso Financeiro';
-                btn.onclick = () => showView('financeiro-view');
-                navLinks.appendChild(btn);
+            if (funcoes.includes('admin')) {
+                // Admin vê todos os botões
+                for (const funcao in funcoesParaTelas) {
+                    botoesParaMostrar.set(funcao, funcoesParaTelas[funcao]);
+                }
+            } else {
+                // Outros usuários veem apenas os botões de suas funções
+                funcoes.forEach(funcao => {
+                    if (funcoesParaTelas[funcao]) {
+                        botoesParaMostrar.set(funcao, funcoesParaTelas[funcao]);
+                    }
+                });
             }
-            // Adicione outros botões aqui da mesma forma
+
+            botoesParaMostrar.forEach(config => {
+                const btn = document.createElement('button');
+                btn.textContent = config.titulo;
+                btn.onclick = () => showView(config.view);
+                navLinks.appendChild(btn);
+            });
         }
 
         logoutBtn.addEventListener('click', () => {
-            auth.signOut();
+            auth.signOut().then(() => {
+                // Após o logout, manda para a autenticação de novo.
+                window.top.location.href = URL_AUTHENTICATOR;
+            });
         });
 
         // Exibe a tela de carregamento inicial
