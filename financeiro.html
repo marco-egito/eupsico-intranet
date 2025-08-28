@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Financeiro - EuPsico</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .content-container { text-align: center; background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 800px; width: 100%;}
+        h2 { color: #004a7f; }
+        a { color: #004a7f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="content-container">
+        <div id="content-section" style="display: none;">
+            <h2>Área Financeira</h2>
+            <p>Bem-vindo à área financeira. Somente usuários com a permissão 'financeiro' ou 'admin' podem ver esta mensagem.</p>
+            <br>
+            <a href="https://marco-egito.github.io/eupsico-intranet/">Voltar ao Dashboard</a>
+        </div>
+
+        <div id="denied-section" style="display: none;">
+            <h2>Acesso Negado</h2>
+            <p>Você não tem permissão para visualizar esta página. Por favor, contate um administrador se acredita que isso é um erro.</p>
+            <br>
+            <a href="https://marco-egito.github.io/eupsico-intranet/">Voltar ao Dashboard</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Use a mesma configuração do seu dashboard
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const contentSection = document.getElementById('content-section');
+        const deniedSection = document.getElementById('denied-section');
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const funcoes = userDoc.data().funcoes || [];
+                    // AQUI ESTÁ A VERIFICAÇÃO DE PERMISSÃO
+                    if (funcoes.includes('financeiro') || funcoes.includes('admin')) {
+                        contentSection.style.display = 'block';
+                    } else {
+                        deniedSection.style.display = 'block';
+                    }
+                } else {
+                    deniedSection.style.display = 'block';
+                }
+            } else {
+                deniedSection.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
