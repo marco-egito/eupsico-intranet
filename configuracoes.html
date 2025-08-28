@@ -2,7 +2,7 @@
 <div class="container">
     <h1>Configurações Gerais</h1>
     <div class="tab">
-        <button class="tablinks" onclick="openTab(event, 'GestaoUsuarios')" id="defaultOpen">Gestão de Usuários</button>
+        <button class="tablinks" data-tab="GestaoUsuarios" id="defaultOpen">Gestão de Usuários</button>
         </div>
 
     <div id="GestaoUsuarios" class="tabcontent">
@@ -91,150 +91,167 @@
 </style>
 
 <script>
-    const usuariosCollection = db.collection('usuarios');
-    const userModal = document.getElementById('user-modal');
-    let localUsuariosList = []; 
-
-    // --- FUNÇÕES UTILITÁRIAS (Toast, Abas, Modal) ---
-    function openTab(evt, tabName) {
-        document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
-        document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
-        document.getElementById(tabName).style.display = "block";
-        if (evt && evt.currentTarget) {
-            evt.currentTarget.classList.add("active");
-        }
-    }
-
-    function showToast(message, type = 'success') {
-        const toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) return;
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 100);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            toast.addEventListener('transitionend', () => toast.remove());
-        }, 3000);
-    }
-
-    function openUserModal(user = null) {
-        const form = document.getElementById('user-form');
-        form.reset();
-        document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
-        document.getElementById('user-id').value = user ? user.id : '';
-        document.getElementById('user-email').disabled = !!user;
+    (function() {
+        // Todo o código agora está dentro de um escopo seguro.
         
-        if (user) {
-            document.getElementById('user-nome').value = user.nome || '';
-            document.getElementById('user-email').value = user.email || '';
-            document.getElementById('user-tel').value = user.contato || '';
-            document.getElementById('user-inativo').checked = user.inativo || false;
+        const usuariosCollection = db.collection('usuarios');
+        const userModal = document.getElementById('user-modal');
+        let localUsuariosList = []; 
+
+        // --- FUNÇÕES UTILITÁRIAS (Toast, Abas, Modal) ---
+        function openTab(evt, tabName) {
+            document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
+            document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
             
-            form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
-                checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
+            const tabElement = document.getElementById(tabName);
+            if(tabElement) tabElement.style.display = "block";
+            
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add("active");
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        }
+
+        function openUserModal(user = null) {
+            const form = document.getElementById('user-form');
+            form.reset();
+            document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
+            document.getElementById('user-id').value = user ? user.id : '';
+            document.getElementById('user-email').disabled = !!user;
+            
+            if (user) {
+                document.getElementById('user-nome').value = user.nome || '';
+                document.getElementById('user-email').value = user.email || '';
+                document.getElementById('user-tel').value = user.contato || '';
+                document.getElementById('user-inativo').checked = user.inativo || false;
+                
+                form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
+                    checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
+                });
+            }
+            userModal.style.display = 'block';
+        }
+
+        function closeUserModal() {
+            userModal.style.display = 'none';
+        }
+
+        // --- RENDERIZAÇÃO E DADOS (FIRESTORE) ---
+        function renderTable(usuariosList) {
+            const tableBody = document.querySelector('#usuarios-table tbody');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            
+            usuariosList.forEach(user => {
+                const row = tableBody.insertRow();
+                const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
+                row.innerHTML = `
+                    <td>${user.nome || ''}</td>
+                    <td>${user.email || ''}</td>
+                    <td>${user.contato || ''}</td>
+                    <td>${funcoesStr}</td>
+                    <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
+                    <td>
+                        <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
+                        <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
+                    </td>`;
             });
         }
-        userModal.style.display = 'block';
-    }
 
-    function closeUserModal() {
-        userModal.style.display = 'none';
-    }
-
-    // --- RENDERIZAÇÃO E DADOS (FIRESTORE) ---
-    function renderTable(usuariosList) {
-        const tableBody = document.querySelector('#usuarios-table tbody');
-        if (!tableBody) return;
-        tableBody.innerHTML = '';
-        
-        usuariosList.forEach(user => {
-            const row = tableBody.insertRow();
-            const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
-            row.innerHTML = `
-                <td>${user.nome || ''}</td>
-                <td>${user.email || ''}</td>
-                <td>${user.contato || ''}</td>
-                <td>${funcoesStr}</td>
-                <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
-                <td>
-                    <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
-                    <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
-                </td>`;
-        });
-    }
-
-    function loadUsuarios() {
-        usuariosCollection.orderBy('nome').onSnapshot(snapshot => {
-            localUsuariosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderTable(localUsuariosList);
-        }, error => {
-            console.error("Erro ao carregar usuários: ", error);
-            showToast("Erro ao carregar usuários.", "error");
-        });
-    }
-
-    // --- EVENT LISTENERS ---
-    document.getElementById('add-usuario-btn').addEventListener('click', () => openUserModal());
-    document.getElementById('modal-cancel-btn').addEventListener('click', closeUserModal);
-    window.addEventListener('click', (event) => { if (event.target == userModal) closeUserModal(); });
-
-    document.getElementById('modal-save-btn').addEventListener('click', async () => {
-        const id = document.getElementById('user-id').value;
-        const funcoesSelecionadas = [];
-        document.querySelectorAll('input[name="funcoes"]:checked').forEach(cb => funcoesSelecionadas.push(cb.value));
-
-        const userData = {
-            nome: document.getElementById('user-nome').value.trim(),
-            email: document.getElementById('user-email').value.trim(),
-            contato: document.getElementById('user-tel').value.trim(),
-            funcoes: funcoesSelecionadas,
-            inativo: document.getElementById('user-inativo').checked,
-        };
-
-        if (!userData.nome || !userData.email) {
-            showToast('Nome e E-mail são obrigatórios.', 'error');
-            return;
+        function loadUsuarios() {
+            usuariosCollection.orderBy('nome').onSnapshot(snapshot => {
+                localUsuariosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTable(localUsuariosList);
+            }, error => {
+                console.error("Erro ao carregar usuários: ", error);
+                showToast("Erro ao carregar usuários.", "error");
+            });
         }
 
-        try {
-            if (id) {
-                await usuariosCollection.doc(id).update(userData);
-                showToast('Usuário atualizado com sucesso!', 'success');
-            } else {
-                const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
-                if (!snapshot.empty) throw new Error('Já existe um usuário com este e-mail.');
-                
-                await usuariosCollection.add(userData);
-                showToast('Usuário adicionado com sucesso!', 'success');
-                alert('IMPORTANTE: O usuário foi criado apenas no banco de dados. Você precisa criar a conta correspondente no Firebase Authentication para que o login funcione.');
+        // --- EVENT LISTENERS ---
+        document.querySelector('.tab').addEventListener('click', (event) => {
+            if (event.target.classList.contains('tablinks')) {
+                const tabName = event.target.dataset.tab;
+                openTab(event, tabName);
             }
-            closeUserModal();
-        } catch (error) {
-            showToast('Erro: ' + error.message, 'error');
-        }
-    });
+        });
 
-    document.getElementById('usuarios-table').addEventListener('click', (e) => {
-        const userId = e.target.dataset.id;
-        if (!userId) return;
+        document.getElementById('add-usuario-btn').addEventListener('click', () => openUserModal());
+        document.getElementById('modal-cancel-btn').addEventListener('click', closeUserModal);
+        window.addEventListener('click', (event) => { if (event.target == userModal) closeUserModal(); });
 
-        if (e.target.classList.contains('edit-row-btn')) {
-            const userToEdit = localUsuariosList.find(u => u.id === userId);
-            if(userToEdit) openUserModal(userToEdit);
-        }
+        document.getElementById('modal-save-btn').addEventListener('click', async () => {
+            const id = document.getElementById('user-id').value;
+            const funcoesSelecionadas = [];
+            document.querySelectorAll('input[name="funcoes"]:checked').forEach(cb => funcoesSelecionadas.push(cb.value));
 
-        if (e.target.classList.contains('delete-row-btn')) {
-            if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
-                usuariosCollection.doc(userId).delete()
-                    .then(() => showToast('Usuário excluído!', 'success'))
-                    .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+            const userData = {
+                nome: document.getElementById('user-nome').value.trim(),
+                email: document.getElementById('user-email').value.trim(),
+                contato: document.getElementById('user-tel').value.trim(),
+                funcoes: funcoesSelecionadas,
+                inativo: document.getElementById('user-inativo').checked,
+            };
+
+            if (!userData.nome || !userData.email) {
+                showToast('Nome e E-mail são obrigatórios.', 'error');
+                return;
             }
-        }
-    });
 
-    // --- INICIALIZAÇÃO DA PÁGINA ---
-    document.getElementById("defaultOpen").click();
-    loadUsuarios();
+            try {
+                if (id) {
+                    await usuariosCollection.doc(id).update(userData);
+                    showToast('Usuário atualizado com sucesso!', 'success');
+                } else {
+                    const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
+                    if (!snapshot.empty) throw new Error('Já existe um usuário com este e-mail.');
+                    
+                    await usuariosCollection.add(userData);
+                    showToast('Usuário adicionado com sucesso!', 'success');
+                    alert('IMPORTANTE: O usuário foi criado apenas no banco de dados. Você precisa criar a conta correspondente no Firebase Authentication para que o login funcione.');
+                }
+                closeUserModal();
+            } catch (error) {
+                showToast('Erro: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('usuarios-table').addEventListener('click', (e) => {
+            const userId = e.target.dataset.id;
+            if (!userId) return;
+
+            if (e.target.classList.contains('edit-row-btn')) {
+                const userToEdit = localUsuariosList.find(u => u.id === userId);
+                if(userToEdit) openUserModal(userToEdit);
+            }
+
+            if (e.target.classList.contains('delete-row-btn')) {
+                if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+                    usuariosCollection.doc(userId).delete()
+                        .then(() => showToast('Usuário excluído!', 'success'))
+                        .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+                }
+            }
+        });
+
+        // --- INICIALIZAÇÃO DA PÁGINA ---
+        const defaultOpenButton = document.getElementById("defaultOpen");
+        if (defaultOpenButton) {
+            defaultOpenButton.click();
+        }
+        loadUsuarios();
+    })();
 </script>
