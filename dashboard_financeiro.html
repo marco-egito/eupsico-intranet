@@ -1,0 +1,337 @@
+<div class="container">
+    <h1>Dashboard Financeiro</h1>
+    <div class="controls-section">
+        <div>
+            <label><strong>Período:</strong></label>
+            <select id="dashboard-mes-selector"></select>
+            <select id="dashboard-ano-selector"></select>
+        </div>
+        <div>
+            <button id="export-pdf-btn" class="action-button btn-pdf">Exportar PDF</button>
+            <button id="export-csv-btn" class="action-button btn-excel">Exportar CSV</button>
+        </div>
+    </div>
+
+    <div class="summary-cards">
+        <div class="card receitas"> <h3>Receitas Pagas (Mês)</h3> <p id="total-receitas">R$ 0,00</p> </div>
+        <div class="card despesas"> <h3>Despesas Pagas (Mês)</h3> <p id="total-despesas">R$ 0,00</p> </div>
+        <div class="card atrasadas"> <h3>Despesas Atrasadas</h3> <p id="total-atrasadas">R$ 0,00</p> </div>
+        <div class="card saldo"> <h3>Saldo do Mês</h3> <p id="saldo-total">R$ 0,00</p> </div>
+    </div>
+
+    <div class="table-section">
+        <h2>Contas a Pagar em Atraso</h2>
+        <table id="atraso-table">
+            <thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead>
+            <tbody><tr><td colspan="4">Calculando...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="table-section">
+        <h2>Contas a Pagar (Mês Selecionado)</h2>
+        <table id="contas-a-pagar-table">
+            <thead><tr><th>Vencimento</th><th>Pagamento</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Ação</th></tr></thead>
+            <tbody><tr><td colspan="6">Calculando...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="table-section">
+        <h2>Entradas (Mês Selecionado)</h2>
+        <table id="entradas-table">
+            <thead><tr><th>Vencimento</th><th>Pagamento</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead>
+            <tbody><tr><td colspan="5">Calculando...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="table-section">
+        <h2>Análise Gráfica</h2>
+        <div class="chart-section">
+            <div class="chart-section-title">
+                <h3>Evolução Financeira (Últimos 12 Meses)</h3>
+                <button id="export-evolucao-btn" class="action-button btn-export-chart">Exportar Imagem</button>
+            </div>
+            <canvas id="evolucaoMensalChart" style="margin-top: 15px;"></canvas>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-section">
+                <div class="chart-section-title"><h3>Top 5 Profissionais por Receita (Geral)</h3><button id="export-top-profissionais-btn" class="action-button btn-export-chart">Exportar Imagem</button></div>
+                <canvas id="topProfissionaisChart"></canvas>
+            </div>
+            <div class="chart-section">
+                <div class="chart-section-title"><h3>Origem das Receitas (Mês)</h3><button id="export-receitas-categoria-btn" class="action-button btn-export-chart">Exportar Imagem</button></div>
+                <canvas id="receitasCategoriaChart"></canvas>
+            </div>
+            <div class="chart-section">
+                <div class="chart-section-title"><h3>Receitas vs. Despesas (Mês)</h3><button id="export-receitas-despesas-btn" class="action-button btn-export-chart">Exportar Imagem</button></div>
+                <canvas id="receitasDespesasChart"></canvas>
+            </div>
+            <div class="chart-section">
+                <div class="chart-section-title"><h3>Despesas por Categoria (Mês)</h3><button id="export-despesas-categoria-btn" class="action-button btn-export-chart">Exportar Imagem</button></div>
+                <canvas id="despesasCategoriaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .controls-section { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .card { background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; border-left: 5px solid; }
+    .card h3 { margin: 0 0 10px 0; font-size: 1.1em; color: #555; }
+    .card p { margin: 0; font-size: 1.8em; font-weight: bold; }
+    .card.receitas { border-color: #28a745; } .card.receitas p { color: #28a745; }
+    .card.despesas { border-color: #dc3545; } .card.despesas p { color: #dc3545; }
+    .card.saldo { border-color: #007bff; } .card.saldo p { color: #007bff; }
+    .card.atrasadas { border-color: #fd7e14; } .card.atrasadas p { color: #fd7e14; }
+    .chart-section-title { display: flex; justify-content: space-between; align-items: center; color: #004a7f; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+    .chart-section { margin-top: 20px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px; }
+    .table-section { margin-top: 30px; }
+    .table-section h2 { color: #004a7f; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+    thead th { background-color: #6c757d; color: white; }
+    .action-button { border: none; padding: 8px 15px; font-size: 0.9em; font-weight: bold; border-radius: 5px; cursor: pointer; color: white; }
+    .btn-pdf { background-color: #D93025; }
+    .btn-excel { background-color: #1D6F42; }
+    .btn-export-chart { background-color: #6c757d; font-size: 0.8em; padding: 5px 10px; }
+    .pay-action-group { display: flex; align-items: center; gap: 5px; }
+    .pay-date-input { padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; }
+    .save-payment-btn { background-color: #28a745; padding: 6px 12px; font-size: 0.9em; }
+    .text-receita { color: #28a745; font-weight: bold; }
+    .text-despesa { color: #dc3545; font-weight: bold; }
+</style>
+
+<script>
+    const fluxoCaixaCollection = db.collection('financeiro').doc('fluxoCaixa').collection('lancamentos');
+
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const mesesAbrev = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    let allLancamentos = [];
+    let lancamentosDoPeriodo = [];
+    let evolucaoMensalChart, receitasDespesasChart, despesasCategoriaChart, topProfissionaisChart, receitasCategoriaChart;
+
+    function formatCurrency(value) { return (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function formatDate(dateStr) { return dateStr ? dateStr.split('-').reverse().join('/') : '---'; }
+
+    function setupControls() {
+        const mesSelector = document.getElementById('dashboard-mes-selector');
+        const anoSelector = document.getElementById('dashboard-ano-selector');
+        if (!mesSelector || !anoSelector) return;
+        
+        const d = new Date();
+        const currentMonth = d.getMonth();
+        const currentYear = d.getFullYear();
+        mesSelector.innerHTML = meses.map((m, i) => `<option value="${i}" ${i === currentMonth ? 'selected' : ''}>${m}</option>`).join('');
+        let yearsHtml = '';
+        for (let y = currentYear - 3; y <= currentYear + 1; y++) { yearsHtml += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`; }
+        anoSelector.innerHTML = yearsHtml;
+        
+        mesSelector.addEventListener('change', updateDashboard);
+        anoSelector.addEventListener('change', updateDashboard);
+
+        document.getElementById('export-pdf-btn').addEventListener('click', () => generateReport('pdf'));
+        document.getElementById('export-csv-btn').addEventListener('click', () => generateReport('csv'));
+        document.getElementById('export-evolucao-btn').addEventListener('click', () => exportChartToJPEG(evolucaoMensalChart, 'evolucao_financeira.jpeg'));
+        document.getElementById('export-receitas-despesas-btn').addEventListener('click', () => exportChartToJPEG(receitasDespesasChart, 'receitas_vs_despesas.jpeg'));
+        document.getElementById('export-despesas-categoria-btn').addEventListener('click', () => exportChartToJPEG(despesasCategoriaChart, 'despesas_por_categoria.jpeg'));
+        document.getElementById('export-top-profissionais-btn').addEventListener('click', () => exportChartToJPEG(topProfissionaisChart, 'top_profissionais.jpeg'));
+        document.getElementById('export-receitas-categoria-btn').addEventListener('click', () => exportChartToJPEG(receitasCategoriaChart, 'receitas_por_categoria.jpeg'));
+    }
+
+    function updateDashboard() {
+        const mes = document.getElementById('dashboard-mes-selector').value;
+        const ano = document.getElementById('dashboard-ano-selector').value;
+
+        lancamentosDoPeriodo = allLancamentos.filter(l => {
+            const dataRef = new Date((l.dataPagamento || l.dataVencimento) + 'T00:00:00');
+            return dataRef.getMonth() == mes && dataRef.getFullYear() == ano;
+        });
+        
+        const lancamentosPagosNoMes = allLancamentos.filter(l => {
+            if (!l.dataPagamento) return false;
+            const dataPg = new Date(l.dataPagamento + 'T00:00:00');
+            return dataPg.getMonth() == mes && dataPg.getFullYear() == ano;
+        });
+
+        const hoje = new Date().toISOString().split('T')[0];
+        const contasAtrasadas = allLancamentos.filter(l => l.tipo === 'despesa' && l.status === 'pendente' && l.dataVencimento < hoje);
+        
+        const receitasPagas = lancamentosPagosNoMes.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + l.valor, 0);
+        const despesasPagas = lancamentosPagosNoMes.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + l.valor, 0);
+        const despesasAtrasadasTotal = contasAtrasadas.reduce((sum, l) => sum + l.valor, 0);
+        
+        document.getElementById('total-receitas').textContent = formatCurrency(receitasPagas);
+        document.getElementById('total-despesas').textContent = formatCurrency(despesasPagas);
+        document.getElementById('saldo-total').textContent = formatCurrency(receitasPagas - despesasPagas);
+        document.getElementById('total-atrasadas').textContent = formatCurrency(despesasAtrasadasTotal);
+        
+        renderMonthlyTables(lancamentosDoPeriodo);
+        updateAtrasoTable(contasAtrasadas);
+        updateCharts(receitasPagas, despesasPagas, lancamentosPagosNoMes);
+    }
+
+    function renderMonthlyTables(lancamentos) {
+        const despesasTbody = document.getElementById('contas-a-pagar-table').querySelector('tbody');
+        const receitasTbody = document.getElementById('entradas-table').querySelector('tbody');
+        
+        const despesas = lancamentos.filter(l => l.tipo === 'despesa').sort((a,b) => new Date(a.dataVencimento) - new Date(b.dataVencimento));
+        const receitas = lancamentos.filter(l => l.tipo === 'receita').sort((a,b) => new Date(a.dataVencimento) - new Date(b.dataVencimento));
+
+        despesasTbody.innerHTML = despesas.length === 0 ? '<tr><td colspan="6">Nenhuma conta a pagar neste período.</td></tr>' : despesas.map(l => {
+            let acaoHtml = 'Pago';
+            if (l.status === 'pendente') {
+                const today = new Date().toISOString().split('T')[0];
+                acaoHtml = `<div class="pay-action-group"> <input type="date" class="pay-date-input" value="${today}"> <button class="action-button save-payment-btn" data-id="${l.id}">Salvar</button> </div>`;
+            }
+            return `<tr>
+                <td>${formatDate(l.dataVencimento)}</td> <td>${l.status === 'pago' ? formatDate(l.dataPagamento) : 'Pendente'}</td>
+                <td>${l.descricao}</td> <td>${l.categoria}</td>
+                <td class="text-despesa">${formatCurrency(l.valor)}</td> <td>${acaoHtml}</td>
+            </tr>`;
+        }).join('');
+        
+        receitasTbody.innerHTML = receitas.length === 0 ? '<tr><td colspan="5">Nenhuma entrada neste período.</td></tr>' : receitas.map(l => `
+            <tr>
+                <td>${formatDate(l.dataVencimento)}</td> <td>${formatDate(l.dataPagamento)}</td>
+                <td>${l.descricao}</td> <td>${l.categoria}</td>
+                <td class="text-receita">${formatCurrency(l.valor)}</td>
+            </tr>
+        `).join('');
+    }
+
+    function updateAtrasoTable(contasAtrasadas) {
+        const tbody = document.getElementById('atraso-table').querySelector('tbody');
+        if(!tbody) return;
+        contasAtrasadas.sort((a,b) => new Date(a.dataVencimento) - new Date(b.dataVencimento));
+        if (contasAtrasadas.length === 0) { tbody.innerHTML = '<tr><td colspan="4">Nenhuma conta em atraso.</td></tr>'; return; }
+        tbody.innerHTML = contasAtrasadas.map(l => `<tr> <td>${formatDate(l.dataVencimento)}</td> <td>${l.descricao}</td> <td>${l.categoria}</td> <td class="text-despesa">${formatCurrency(l.valor)}</td> </tr>`).join('');
+    }
+
+    function updateCharts(receitas, despesas, lancamentosPagosNoMes) {
+        updateEvolucaoChart();
+        updateTopProfissionaisChart();
+        updateReceitasCategoriaChart(lancamentosPagosNoMes);
+        updateReceitasDespesasChart(receitas, despesas);
+        updateDespesasCategoriaChart(lancamentosPagosNoMes);
+    }
+    
+    function updateEvolucaoChart() {
+        const labels = [];
+        const receitasData = [];
+        const despesasData = [];
+        const saldoData = [];
+        const today = new Date();
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const mes = date.getMonth();
+            const ano = date.getFullYear();
+            labels.push(`${mesesAbrev[mes]}/${String(ano).slice(2)}`);
+            const lancamentosPagosNoMes = allLancamentos.filter(l => l.dataPagamento && new Date(l.dataPagamento).getMonth() == mes && new Date(l.dataPagamento).getFullYear() == ano);
+            const receitas = lancamentosPagosNoMes.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + l.valor, 0);
+            const despesas = lancamentosPagosNoMes.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + l.valor, 0);
+            receitasData.push(receitas);
+            despesasData.push(despesas);
+            saldoData.push(receitas - despesas);
+        }
+        const ctx = document.getElementById('evolucaoMensalChart').getContext('2d');
+        if (evolucaoMensalChart) evolucaoMensalChart.destroy();
+        evolucaoMensalChart = new Chart(ctx, {
+            type: 'line', data: { labels, datasets: [ { label: 'Receitas', data: receitasData, borderColor: 'rgba(40, 167, 69, 1)', backgroundColor: 'rgba(40, 167, 69, 0.1)', fill: true, tension: 0.1 }, { label: 'Despesas', data: despesasData, borderColor: 'rgba(220, 53, 69, 1)', backgroundColor: 'rgba(220, 53, 69, 0.1)', fill: true, tension: 0.1 }, { label: 'Saldo', data: saldoData, borderColor: 'rgba(0, 123, 255, 1)', backgroundColor: 'rgba(0, 123, 255, 0.1)', fill: true, tension: 0.1 } ] }
+        });
+    }
+
+    function updateTopProfissionaisChart() {
+        const receitasPorProfissional = allLancamentos
+            .filter(l => l.categoria === 'Recebimento Profissional' && l.status === 'pago')
+            .reduce((acc, l) => {
+                const match = l.descricao.match(/Recebimento - (.*?)\s\(/);
+                const nome = match ? match[1] : 'N/A';
+                acc[nome] = (acc[nome] || 0) + l.valor;
+                return acc;
+            }, {});
+        const sortedData = Object.entries(receitasPorProfissional).sort(([,a],[,b]) => b-a).slice(0, 5);
+        const labels = sortedData.map(item => item[0]);
+        const data = sortedData.map(item => item[1]);
+        const ctx = document.getElementById('topProfissionaisChart').getContext('2d');
+        if(topProfissionaisChart) topProfissionaisChart.destroy();
+        topProfissionaisChart = new Chart(ctx, {
+            type: 'bar', data: { labels, datasets: [{ label: 'Receita Gerada (R$)', data, backgroundColor: 'rgba(23, 162, 184, 0.7)' }] },
+            options: { indexAxis: 'y', responsive: true }
+        });
+    }
+
+    function updateReceitasCategoriaChart(lancamentosPagosNoMes) {
+        const receitasPorCategoria = lancamentosPagosNoMes
+            .filter(l => l.tipo === 'receita')
+            .reduce((acc, l) => { acc[l.categoria] = (acc[l.categoria] || 0) + l.valor; return acc; }, {});
+        const ctx = document.getElementById('receitasCategoriaChart').getContext('2d');
+        if (receitasCategoriaChart) receitasCategoriaChart.destroy();
+        receitasCategoriaChart = new Chart(ctx, {
+            type: 'pie', data: { labels: Object.keys(receitasPorCategoria), datasets: [{ data: Object.values(receitasPorCategoria), backgroundColor: ['#28a745', '#20c997', '#90EE90', '#3CB371'] }] },
+            options: { responsive: true }
+        });
+    }
+
+    function updateReceitasDespesasChart(receitas, despesas) {
+        const ctx = document.getElementById('receitasDespesasChart').getContext('2d');
+        if (receitasDespesasChart) receitasDespesasChart.destroy();
+        receitasDespesasChart = new Chart(ctx, { type: 'bar', data: { labels: ['Financeiro do Mês'], datasets: [ { label: 'Receitas Pagas', data: [receitas], backgroundColor: 'rgba(40, 167, 69, 0.7)' }, { label: 'Despesas Pagas', data: [despesas], backgroundColor: 'rgba(220, 53, 69, 0.7)' } ]}, options: { responsive: true }});
+    }
+
+    function updateDespesasCategoriaChart(lancamentosPagosNoMes) {
+        const despesasPorCategoria = lancamentosPagosNoMes.filter(l => l.tipo === 'despesa').reduce((acc, l) => { acc[l.categoria] = (acc[l.categoria] || 0) + l.valor; return acc; }, {});
+        const ctx = document.getElementById('despesasCategoriaChart').getContext('2d');
+        if (despesasCategoriaChart) despesasCategoriaChart.destroy();
+        despesasCategoriaChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(despesasPorCategoria), datasets: [{ data: Object.values(despesasPorCategoria), backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#6f42c1', '#6c757d', '#17a2b8'] }] }, options: { responsive: true }});
+    }
+
+    function generateReport(format) {
+        if (lancamentosDoPeriodo.length === 0) { alert('Não há dados para gerar um relatório para este período.'); return; }
+        const mes = document.getElementById('dashboard-mes-selector').options[document.getElementById('dashboard-mes-selector').selectedIndex].text;
+        const ano = document.getElementById('dashboard-ano-selector').value;
+        if (format === 'csv') {
+            let csvContent = "Vencimento;Pagamento;Descrição;Categoria;Tipo;Valor;Status\n";
+            lancamentosDoPeriodo.forEach(l => { csvContent += `"${formatDate(l.dataVencimento)}";"${formatDate(l.dataPagamento)}";"${l.descricao}";"${l.categoria}";"${l.tipo}";"${l.valor.toFixed(2).replace('.',',')}";"${l.status}"\n`; });
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `relatorio_${mes.toLowerCase()}_${ano}.csv`; link.click();
+        } else if (format === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18); doc.text(`Relatório Financeiro - ${mes}/${ano}`, 14, 22);
+            const head = [['Vencimento', 'Pagamento', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status']];
+            const body = lancamentosDoPeriodo.map(l => [formatDate(l.dataVencimento), formatDate(l.dataPagamento), l.descricao, l.categoria, l.tipo, formatCurrency(l.valor), l.status]);
+            doc.autoTable({ head, body, startY: 30 });
+            doc.save(`relatorio_${mes.toLowerCase()}_${ano}.pdf`);
+        }
+    }
+
+    function exportChartToJPEG(chartInstance, fileName) {
+        if (!chartInstance || !chartInstance.canvas) { alert('Gráfico não está pronto para ser exportado.'); return; }
+        const link = document.createElement('a'); link.href = chartInstance.toBase64Image('image/jpeg', 1); link.download = fileName; link.click();
+    }
+
+    document.querySelector('.container').addEventListener('click', (e) => {
+        if (e.target.classList.contains('save-payment-btn')) {
+            const lancamentoId = e.target.dataset.id;
+            const dateInput = e.target.previousElementSibling;
+            const dataPagamento = dateInput.value;
+            if (dataPagamento) {
+                fluxoCaixaCollection.doc(lancamentoId).update({ dataPagamento: dataPagamento, status: 'pago' })
+                    .then(() => alert('Pagamento registrado com sucesso!'))
+                    .catch(err => alert('Erro ao registrar pagamento: ' + err.message));
+            } else { 
+                alert('Por favor, selecione uma data de pagamento.'); 
+            }
+        }
+    });
+    
+    fluxoCaixaCollection.onSnapshot(snapshot => {
+        allLancamentos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setupControls();
+        updateDashboard();
+    }, error => {
+        console.error("Erro ao buscar lançamentos: ", error);
+        document.getElementById('app-container').innerHTML = `<p style="color:red;">Não foi possível carregar os dados financeiros.</p>`;
+    });
+</script>
