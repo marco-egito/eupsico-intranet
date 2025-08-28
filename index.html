@@ -35,8 +35,7 @@
             </div>
             <h2>Painel de Acesso</h2>
             <p>Selecione a área que deseja acessar:</p>
-            <div id="nav-links" class="nav-links">
-                </div>
+            <div id="nav-links" class="nav-links"></div>
         </div>
     </div>
 
@@ -48,13 +47,13 @@
         // !!!!! IMPORTANTE !!!!!
         // Substitua pela SUA configuração real do Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-          authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-          databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-          projectId: "eupsico-agendamentos-d2048",
-          storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-          messagingSenderId: "1041518416343",
-          appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+            apiKey: "SUA_API_KEY", // GARANTA QUE SUA API KEY REAL ESTÁ AQUI
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
         };
 
         // --- INICIALIZAÇÃO E REFERÊNCIAS ---
@@ -71,8 +70,6 @@
         const navLinks = document.getElementById('nav-links');
 
         // --- MAPEAMENTO DE FUNÇÕES PARA LINKS ---
-        // Este objeto define quais links cada função pode ver.
-        // As URLs são relativas ao seu Google Sites.
         const linksPorFuncao = {
             'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
             'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
@@ -80,40 +77,34 @@
             'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
             'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
         };
+        // CORREÇÃO DA URL BASE
         const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
 
         // --- LÓGICA PRINCIPAL ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // Usuário está logado, vamos buscar as permissões dele.
                 const userDoc = await db.collection('usuarios').doc(user.uid).get();
                 if (userDoc.exists) {
                     const funcoes = userDoc.data().funcoes || [];
                     renderDashboard(user, funcoes);
                 } else {
-                    // Usuário logado mas não está no nosso banco de dados.
                     alert('Acesso negado. Este usuário não está autorizado.');
                     auth.signOut();
                 }
             } else {
-                // Usuário não está logado.
                 renderLogin();
             }
         });
 
         function renderDashboard(user, funcoes) {
-            // Preenche informações do usuário e mostra o painel
             userName.textContent = user.displayName;
             userPhoto.src = user.photoURL;
-            navLinks.innerHTML = ''; // Limpa links antigos
+            navLinks.innerHTML = ''; 
 
-            // Cria os links baseados nas funções do usuário
             const linksParaMostrar = new Set();
             if (funcoes.includes('admin')) {
-                // Admin vê todos os links
                 Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
             } else {
-                // Usuários normais veem os links de suas funções
                 funcoes.forEach(funcao => {
                     if (linksPorFuncao[funcao]) {
                         linksParaMostrar.add(linksPorFuncao[funcao]);
@@ -121,12 +112,12 @@
                 });
             }
 
-            // Renderiza os links na tela
             linksParaMostrar.forEach(link => {
                 const a = document.createElement('a');
                 a.href = URL_BASE_SITES + link.url;
                 a.textContent = link.titulo;
-                a.target = '_top';
+                // CORREÇÃO DE NAVEGAÇÃO
+                a.target = '_top'; 
                 navLinks.appendChild(a);
             });
             
@@ -139,27 +130,21 @@
             dashboardSection.style.display = 'none';
         }
 
-// --- EVENTOS DE BOTÕES ---
-loginBtn.addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    // ALTERADO: Usar signInWithRedirect em vez de signInWithPopup
-    auth.signInWithRedirect(provider);
-});
+        // --- EVENTOS DE BOTÕES ---
+        loginBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            // CORREÇÃO PARA IFRAME
+            auth.signInWithRedirect(provider);
+        });
 
-logoutBtn.addEventListener('click', () => {
-    auth.signOut();
-});
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
 
-// NOVO: Código para processar o resultado após o redirecionamento
-auth.getRedirectResult()
-    .then((result) => {
-        if (result.user) {
-            console.log("Login via redirect bem-sucedido!", result.user);
-        }
-    })
-    .catch((error) => {
-        console.error("Erro no getRedirectResult:", error);
-    });
+        // CÓDIGO PARA PROCESSAR O RETORNO DO LOGIN
+        auth.getRedirectResult().catch((error) => {
+            console.error("Erro no getRedirectResult:", error);
+        });
     </script>
 </body>
 </html>
