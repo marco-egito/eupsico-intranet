@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Intranet EuPsico</title>
+    </head>
+<body>
+    <div class="app-container">
+        <div id="loading-view" class="content-box view" style="text-align: center;">
+            <h2>Intranet EuPsico</h2>
+            <p>Verificando autenticação...</p>
+        </div>
+        <div id="dashboard-view" class="content-box view">
+             </div>
+        </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+           const firebaseConfig = {
+              apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+              projectId: "eupsico-agendamentos-d2048",
+              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+              messagingSenderId: "1041518416343",
+              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+
+            const URL_AUTHENTICATOR = 'https://marco-egito.github.io/eupsico-intranet/authenticator.html';
+            
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    window.top.location.href = URL_AUTHENTICATOR;
+                } else {
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().funcoes) {
+                        // A lógica para renderizar o dashboard entra aqui
+                        // showView('dashboard-view');
+                    } else {
+                        // A lógica para acesso negado entra aqui
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

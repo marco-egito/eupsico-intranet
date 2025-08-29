@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "eupsico-agendamentos-d2048",
+    "eupsico-intranet": "eupsico-agendamentos-d2048"
+  },
+  "targets": {},
+  "etags": {}
+}
