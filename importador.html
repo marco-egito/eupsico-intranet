@@ -9,30 +9,36 @@
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; }
         input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
-        button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-right: 10px; }
         button:disabled { background-color: #6c757d; cursor: not-allowed; }
         #log { border: 1px solid #ccc; background-color: #333; color: #fff; margin-top: 20px; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; }
         .log-success { color: #28a745; }
         .log-error { color: #dc3545; font-weight: bold; }
         .log-info { color: #17a2b8; }
+        #auth-status { background-color: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>Importar e Criar Novos Usuários em Lote</h1>
-        <p>Esta ferramenta lê um arquivo .xlsx e chama a Cloud Function para criar cada usuário na Autenticação e no Firestore, já com seu UID.</p>
-        <p><strong>Atenção:</strong> Você precisa estar logado como Administrador para usar esta função.</p>
-
-        <div class="form-group">
-            <label for="file-input">1. Selecione o Arquivo Excel (.xlsx) com os novos usuários:</label>
-            <input type="file" id="file-input" accept=".xlsx, .xls">
+        
+        <div id="auth-status">
+            <p id="auth-message">Aguardando login...</p>
+            <button id="login-btn">Fazer Login com Google</button>
         </div>
 
-        <button id="import-btn" disabled>2. Iniciar Criação em Lote</button>
+        <div id="importer-content" style="display: none;">
+            <p>Esta ferramenta chama a Cloud Function para criar cada usuário na Autenticação e no Firestore.</p>
+            <div class="form-group">
+                <label for="file-input">1. Selecione o Arquivo Excel (.xlsx) com os novos usuários:</label>
+                <input type="file" id="file-input" accept=".xlsx, .xls">
+            </div>
+            <button id="import-btn">2. Iniciar Criação em Lote</button>
+        </div>
 
         <h3>Log da Importação:</h3>
-        <div id="log">Aguardando login...</div>
+        <div id="log"></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -54,9 +60,12 @@
         const auth = firebase.auth();
         const functions = firebase.functions();
         
+        const loginBtn = document.getElementById('login-btn');
         const importBtn = document.getElementById('import-btn');
         const fileInput = document.getElementById('file-input');
         const logDiv = document.getElementById('log');
+        const authMessage = document.getElementById('auth-message');
+        const importerContent = document.getElementById('importer-content');
 
         function log(message, type = 'info') {
             logDiv.innerHTML += `<p class="log-${type}">[${new Date().toLocaleTimeString()}] ${message}</p>`;
@@ -65,12 +74,20 @@
 
         auth.onAuthStateChanged((user) => {
              if (user) {
-                importBtn.disabled = false;
+                authMessage.textContent = `Logado como: ${user.email}`;
+                loginBtn.style.display = 'none';
+                importerContent.style.display = 'block';
                 log('Usuário autenticado. Pronto para importar.', 'success');
              } else {
-                importBtn.disabled = true;
-                log('Você precisa estar logado no painel principal para usar esta ferramenta.', 'error');
+                authMessage.textContent = 'Você precisa estar logado para usar esta ferramenta.';
+                loginBtn.style.display = 'block';
+                importerContent.style.display = 'none';
              }
+        });
+
+        loginBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => log(err.message, 'error'));
         });
 
         importBtn.addEventListener('click', () => {
@@ -93,9 +110,7 @@
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (jsonData.length === 0) {
-                        throw new Error('A planilha parece estar vazia.');
-                    }
+                    if (jsonData.length === 0) throw new Error('A planilha parece estar vazia.');
                     
                     log(`Planilha lida com sucesso. ${jsonData.length} usuários encontrados.`);
                     log('Iniciando chamadas para a Cloud Function. Isso pode demorar...');
@@ -105,8 +120,6 @@
                     let errorCount = 0;
 
                     for (const row of jsonData) {
-                        // --- INÍCIO DA CORREÇÃO ---
-                        // "Limpa" os dados da linha antes de enviar para garantir que não há valores 'undefined'
                         const sanitizedUserData = {
                             nome: row.nome || '',
                             email: row.email || '',
@@ -118,18 +131,16 @@
                             recebeDireto: String(row.recebeDireto).toUpperCase() === 'TRUE',
                             inativo: String(row.inativo).toUpperCase() === 'TRUE'
                         };
-                        // --- FIM DA CORREÇÃO ---
-
+                        
                         if (!sanitizedUserData.email) {
                             log(` -> FALHA: Linha ignorada por não conter um e-mail.`, 'error');
                             errorCount++;
-                            continue; // Pula para a próxima linha
+                            continue;
                         }
 
                         log(`Processando: ${sanitizedUserData.email}...`);
                         
                         try {
-                            // Chama a Cloud Function com os dados já limpos
                             await criarUsuario(sanitizedUserData);
                             log(` -> SUCESSO: Usuário ${sanitizedUserData.email} criado.`, 'success');
                             successCount++;
