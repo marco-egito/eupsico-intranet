@@ -1,103 +1,45 @@
-/* css/portal.css */
+/* Adicionar este código ao final de css/portal.css */
 
-/* Estilos da Tela de Login */
-.auth-view { 
-    text-align: center; 
-    padding-top: 50px; 
+.google-login-button {
+    /* Estrutura e Alinhamento */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px; /* Espaço entre o ícone e o texto */
+
+    /* Estilo Visual */
+    background-color: #ffffff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    
+    /* Fontes */
+    font-family: "Google Sans", Roboto, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    
+    /* Tamanho e Espaçamento */
+    height: 40px;
+    padding: 0 12px;
+    
+    /* Comportamento */
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.auth-view h2 { 
-    color: #004a7f; 
+.google-login-button:hover {
+    background-color: #f8f9fa;
+    border-color: #c6c9ce;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.auth-view button { 
-    padding: 10px 20px; 
-    font-size: 1em; 
-    cursor: pointer; 
-    background-color: #007bff; 
-    color:white; 
-    border:none; 
-    border-radius: 5px; 
-}
-
-/* Estilos do Portal Principal */
-.main-container { 
-    display: flex; 
-    min-height: 100vh; 
-}
-
-.top-bar { 
-    width: 100%; 
-    background-color: #ffffff; 
-    color: #333; 
-    padding: 10px 20px; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    box-sizing: border-box; 
-}
-
-.top-bar h1 { 
-    margin: 0; 
-    font-size: 1.5em; 
-    color: #004a7f; 
-}
-
-.top-bar #user-info { 
-    font-weight: bold; 
-    margin-right: 15px;
-}
-
-.top-bar #logout-button { 
-    background: none; 
-    border: 1px solid #dc3545; 
-    color: #dc3545; 
-    padding: 8px 12px; 
-    cursor: pointer; 
-    border-radius: 5px; 
-    font-weight: bold; 
-    transition: all 0.2s; 
-}
-
-.top-bar #logout-button:hover { 
-    background-color: #dc3545; 
-    color: white; 
-}
-
-.content { 
-    flex-grow: 1; 
-    padding: 20px; 
-}
-        
-/* Estilos da Tela de Seleção de Módulos */
-.module-selection { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-    gap: 20px; 
-    padding: 20px; 
-}
-
-.module-card { 
-    background-color: white; 
-    border-radius: 8px; 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-    padding: 20px; 
-    text-align: center; 
-    cursor: pointer; 
-    transition: transform 0.2s, box-shadow 0.2s; 
-}
-
-.module-card:hover { 
-    transform: translateY(-5px); 
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
-}
-
-.module-card h3 { 
-    margin-top: 0; 
-    color: #004a7f; 
-}
-
-.module-card p { 
-    color: #666; 
+/* Ícone do Google (SVG embutido para não precisar de arquivo de imagem) */
+.google-login-button::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNCAuOCA2LTEuOUwzIDFsLTMgMS45YTkgOSAwIDAgMCAxNSA1LjF6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgzYTkgOSAwIDAgMCAwIDhsMS0xLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwxLjMgMi40YzEtMS4zIDMtMi4xIDQuNy0yLjF6IiBmaWxsPSIjRUE0MzM1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNMCAwaDE4djE4SDB6Ii8+PC9nPjwvc3ZnPg==");
+    background-repeat: no-repeat;
+    background-size: 18px;
 }
