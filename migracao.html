@@ -23,7 +23,10 @@
     <div id="log">Aguardando início...</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script> <script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
             authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
@@ -36,7 +39,6 @@
         
         firebase.initializeApp(firebaseConfig);
         
-        // Conexões com os dois bancos de dados
         const rtdb = firebase.database();
         const firestore = firebase.firestore();
         const logDiv = document.getElementById('log');
@@ -45,6 +47,30 @@
             logDiv.innerHTML += `<p class="log-${type}">[${new Date().toLocaleTimeString()}] ${message}</p>`;
             logDiv.scrollTop = logDiv.scrollHeight;
         }
+
+        // --- NOVA FUNÇÃO DE LIMPEZA ---
+        // Esta função percorre um objeto e remove quaisquer chaves com valor 'undefined'.
+        function sanitizeDataForFirestore(obj) {
+            if (obj === null || typeof obj !== 'object') {
+                return obj;
+            }
+
+            if (Array.isArray(obj)) {
+                return obj.map(item => sanitizeDataForFirestore(item));
+            }
+
+            const newObj = {};
+            for (const key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                    const value = obj[key];
+                    if (value !== undefined) {
+                        newObj[key] = sanitizeDataForFirestore(value);
+                    }
+                }
+            }
+            return newObj;
+        }
+
 
         async function migrarProfissionais() {
             log('Iniciando migração dos profissionais...');
@@ -60,33 +86,31 @@
                 }
 
                 log(`Encontrados ${profissionais.length} profissionais no Realtime Database.`);
-
                 const batch = firestore.batch();
 
                 profissionais.forEach(prof => {
-                    // Transforma os campos booleanos em um array de 'funcoes'
                     const funcoes = [];
                     if (prof.gestor) funcoes.push('gestor');
                     if (prof.supervisor) funcoes.push('supervisor');
-                    // Adicione aqui outras funções se necessário
 
                     const novoUsuarioDoc = {
                         nome: prof.eupsico || '',
                         email: prof.email || '',
                         contato: prof.contato || '',
-                        uid: prof.uid || '', // Mantém o UID se já existir
+                        uid: prof.uid || '',
                         inativo: prof.inativo || false,
-                        funcoes: funcoes, // Novo campo de array
+                        funcoes: funcoes,
                         migradoDeRTDB: true
                     };
                     
-                    // Adiciona a operação ao batch. O Firestore vai gerar um ID único.
+                    // CORREÇÃO: Limpa o objeto antes de adicionar ao batch
+                    const sanitizedDoc = sanitizeDataForFirestore(novoUsuarioDoc);
                     const docRef = firestore.collection('usuarios').doc();
-                    batch.set(docRef, novoUsuarioDoc);
+                    batch.set(docRef, sanitizedDoc);
                 });
 
                 await batch.commit();
-                log(`${profissionais.length} profissionais migrados com sucesso para a coleção "usuarios" no Firestore!`, 'success');
+                log(`${profissionais.length} profissionais migrados com sucesso para a coleção "usuarios"!`, 'success');
 
             } catch (error) {
                 log(`ERRO na migração de profissionais: ${error.message}`, 'error');
@@ -109,11 +133,12 @@
                     const data = snapshot.val();
 
                     if (data) {
-                        // Salva todos os dados de um nó (ex: 'cobranca') em um único documento
-                        // dentro de uma coleção com o mesmo nome.
+                        // CORREÇÃO: Limpa os dados antes de enviar para o Firestore
+                        const sanitizedData = sanitizeDataForFirestore(data);
+
                         const docRef = firestore.collection('financeiro').doc(no);
-                        await docRef.set(data);
-                        log(`Dados de "${no}" migrados com sucesso para o documento "${no}" na coleção "financeiro".`, 'success');
+                        await docRef.set(sanitizedData);
+                        log(`Dados de "${no}" migrados com sucesso.`, 'success');
                     } else {
                         log(`Nenhum dado encontrado em "financeiro/${no}". Pulando.`, 'info');
                     }
@@ -129,7 +154,6 @@
 
         document.getElementById('btn-migrar-profissionais').addEventListener('click', migrarProfissionais);
         document.getElementById('btn-migrar-financeiro').addEventListener('click', migrarDadosFinanceiros);
-
     </script>
 </body>
 </html>
