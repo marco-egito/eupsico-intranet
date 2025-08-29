@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ferramenta de Migração - RTDB para Firestore</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; font-size: 1.1em; margin-right: 10px; cursor: pointer; }
+        #log { border: 1px solid #ccc; background-color: #f4f4f4; margin-top: 20px; padding: 10px; height: 400px; overflow-y: scroll; font-family: monospace; }
+        .log-success { color: green; }
+        .log-error { color: red; font-weight: bold; }
+        .log-info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Migração de Dados: Realtime Database para Firestore</h1>
+    <p>Use os botões abaixo para migrar os dados. Abra o console (F12) para ver detalhes. <strong>Execute cada migração apenas UMA VEZ.</strong></p>
+    
+    <button id="btn-migrar-profissionais">1. Migrar Profissionais para a Coleção "usuarios"</button>
+    <button id="btn-migrar-financeiro">2. Migrar Dados Financeiros</button>
+
+    <h3>Log da Migração:</h3>
+    <div id="log">Aguardando início...</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script> <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        
+        // Conexões com os dois bancos de dados
+        const rtdb = firebase.database();
+        const firestore = firebase.firestore();
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            logDiv.innerHTML += `<p class="log-${type}">[${new Date().toLocaleTimeString()}] ${message}</p>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function migrarProfissionais() {
+            log('Iniciando migração dos profissionais...');
+            this.disabled = true;
+
+            try {
+                const snapshot = await rtdb.ref('profissionais').once('value');
+                const profissionais = snapshot.val();
+
+                if (!profissionais || !Array.isArray(profissionais)) {
+                    log('Nenhum profissional encontrado ou formato inválido (não é um array).', 'error');
+                    return;
+                }
+
+                log(`Encontrados ${profissionais.length} profissionais no Realtime Database.`);
+
+                const batch = firestore.batch();
+
+                profissionais.forEach(prof => {
+                    // Transforma os campos booleanos em um array de 'funcoes'
+                    const funcoes = [];
+                    if (prof.gestor) funcoes.push('gestor');
+                    if (prof.supervisor) funcoes.push('supervisor');
+                    // Adicione aqui outras funções se necessário
+
+                    const novoUsuarioDoc = {
+                        nome: prof.eupsico || '',
+                        email: prof.email || '',
+                        contato: prof.contato || '',
+                        uid: prof.uid || '', // Mantém o UID se já existir
+                        inativo: prof.inativo || false,
+                        funcoes: funcoes, // Novo campo de array
+                        migradoDeRTDB: true
+                    };
+                    
+                    // Adiciona a operação ao batch. O Firestore vai gerar um ID único.
+                    const docRef = firestore.collection('usuarios').doc();
+                    batch.set(docRef, novoUsuarioDoc);
+                });
+
+                await batch.commit();
+                log(`${profissionais.length} profissionais migrados com sucesso para a coleção "usuarios" no Firestore!`, 'success');
+
+            } catch (error) {
+                log(`ERRO na migração de profissionais: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                this.disabled = false;
+            }
+        }
+        
+        async function migrarDadosFinanceiros() {
+            log('Iniciando migração dos dados financeiros...');
+            this.disabled = true;
+
+            const nosFinanceiros = ['cobranca', 'repasses', 'grades', 'valores', 'acordos', 'mensagens', 'comprovantes'];
+
+            try {
+                for (const no of nosFinanceiros) {
+                    log(`Buscando dados de "financeiro/${no}"...`);
+                    const snapshot = await rtdb.ref(`financeiro/${no}`).once('value');
+                    const data = snapshot.val();
+
+                    if (data) {
+                        // Salva todos os dados de um nó (ex: 'cobranca') em um único documento
+                        // dentro de uma coleção com o mesmo nome.
+                        const docRef = firestore.collection('financeiro').doc(no);
+                        await docRef.set(data);
+                        log(`Dados de "${no}" migrados com sucesso para o documento "${no}" na coleção "financeiro".`, 'success');
+                    } else {
+                        log(`Nenhum dado encontrado em "financeiro/${no}". Pulando.`, 'info');
+                    }
+                }
+                log('Migração dos dados financeiros concluída!', 'success');
+            } catch (error) {
+                log(`ERRO na migração dos dados financeiros: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                this.disabled = false;
+            }
+        }
+
+        document.getElementById('btn-migrar-profissionais').addEventListener('click', migrarProfissionais);
+        document.getElementById('btn-migrar-financeiro').addEventListener('click', migrarDadosFinanceiros);
+
+    </script>
+</body>
+</html>
