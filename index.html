@@ -2,138 +2,176 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intranet EuPsico</title>
-    
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/portal.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Google+Sans:wght@500">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 20px; text-align: center; }
+        .app-container { max-width: 800px; margin: auto; }
+        .view { display: none; } /* Esconde todas as seções por padrão */
+        .visible { display: block; } /* Mostra a seção ativa */
+        .content-box { background-color: white; padding: 25px 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #ddd; }
+        #login-button { background-color: #004a7f; color: white; border: none; font-size: 1.1em; }
+        #logout-button { background-color: #6c757d; color: white; border: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+        .user-info { display: flex; align-items: center; }
+        .user-info img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
+        .user-info span { font-weight: bold; }
+        #nav-links button { display: block; width: 100%; margin: 10px 0; text-align: left; background-color: #f1f1f1; border: 1px solid #ddd; padding: 15px; }
+        #nav-links button:hover { background-color: #e0e0e0; }
+        .back-button { display: inline-block; margin-bottom: 20px; font-weight: bold; cursor: pointer; color: #004a7f; background: none; border: none; padding: 0; text-align: left; }
+    </style>
 </head>
 <body>
+    <div class="app-container">
 
-    <div id="auth-view">
-        <h2>Intranet EuPsico</h2>
-        <p id="auth-message">Verificando autenticação...</p>
-        <button id="login-button" class="hidden google-login-button">Login com Google</button>
-    </div>
+        <div id="login-view" class="view content-box">
+            <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
+            <h2>Intranet EuPsico</h2>
+            <p>Por favor, faça login para continuar.</p>
+            <button id="login-button">Login com Google</button>
+        </div>
 
-    <div id="app-view" class="hidden">
-        <header class="top-bar">
-            <h1>Intranet EuPsico</h1>
-            <div>
-                <span id="user-info"></span>
+        <div id="loading-view" class="view">
+            <p>Verificando autenticação...</p>
+        </div>
+        
+        <div id="dashboard-view" class="view content-box">
+            <div class="header">
+                <div class="user-info">
+                    <img id="user-photo" src="" alt="Foto">
+                    <span id="user-name"></span>
+                </div>
                 <button id="logout-button">Sair</button>
             </div>
-        </header>
-        <main id="app-container" class="content">
-            </main>
+            <h2>Painel de Acesso</h2>
+            <p>Selecione a área que deseja acessar:</p>
+            <div id="nav-links">
+                </div>
+        </div>
+
+        <div id="financeiro-view" class="view content-box">
+            <button class="back-button" onclick="showView('dashboard-view')">← Voltar ao Painel</button>
+            <h2 style="text-align: left;">Área Financeira</h2>
+            <p style="text-align: left;">Aqui fica todo o conteúdo exclusivo da área financeira.</p>
+            </div>
+
+        <div id="rh-view" class="view content-box">
+            <button class="back-button" onclick="showView('dashboard-view')">← Voltar ao Painel</button>
+            <h2 style="text-align: left;">Recursos Humanos</h2>
+            <p style="text-align: left;">Aqui fica todo o conteúdo exclusivo da área de RH.</p>
+            </div>
+
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // !! IMPORTANTE: Use o MESMO firebaseConfig em todos os lugares !!
+            const firebaseConfig = {
+              apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+              projectId: "eupsico-agendamentos-d2048",
+              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+              messagingSenderId: "1041518416343",
+              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+            };
+                        firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+            const loginView = document.getElementById('login-view');
+            const loadingView = document.getElementById('loading-view');
+            const dashboardView = document.getElementById('dashboard-view');
+            const loginButton = document.getElementById('login-button');
+            const logoutButton = document.getElementById('logout-button');
+            const userPhoto = document.getElementById('user-photo');
+            const userName = document.getElementById('user-name');
+            const navLinks = document.getElementById('nav-links');
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-            projectId: "eupsico-agendamentos-d2048",
-            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
-            messagingSenderId: "1041518416343",
-            appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.db = db;
-        window.auth = auth;
-
-        const authView = document.getElementById('auth-view');
-        const appView = document.getElementById('app-view');
-        const loginButton = document.getElementById('login-button');
-        const logoutButton = document.getElementById('logout-button');
-        const appContainer = document.getElementById('app-container');
-        const userInfo = document.getElementById('user-info');
-
-        // --- LÓGICA DE LOGOUT AUTOMÁTICO ---
-        let inactivityTimer;
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                alert("Sua sessão expirou por inatividade. Por favor, faça o login novamente.");
-                signOut(auth);
-            }, 40 * 60 * 1000);
-        }
-        function stopInactivityTimer() { clearTimeout(inactivityTimer); }
-        const userActivityEvents = ['mousemove', 'mousedown', 'click', 'scroll', 'keydown'];
-        function setupActivityListeners() { userActivityEvents.forEach(event => { window.addEventListener(event, resetInactivityTimer, true); }); }
-        function removeActivityListeners() { userActivityEvents.forEach(event => { window.removeEventListener(event, resetInactivityTimer, true); }); }
-
-        // --- LÓGICA DE CARREGAMENTO DE MÓDULOS ---
-        async function loadModule(moduleFile) {
-            try {
-                appContainer.innerHTML = 'Carregando módulo...';
-                const response = await fetch(moduleFile);
-                if (!response.ok) throw new Error(`Módulo não encontrado (${response.status})`);
-                const moduleContent = await response.text();
-                appContainer.innerHTML = moduleContent;
-                const scripts = appContainer.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    newScript.text = script.innerText;
-                    if (script.type === 'module' || script.innerHTML.includes('import')) {
-                        newScript.type = 'module';
-                    }
-                    document.body.appendChild(newScript).parentNode.removeChild(newScript);
-                });
-            } catch (error) {
-                appContainer.innerHTML = `<p style="color:red;">Erro ao carregar o módulo: ${error.message}</p>`;
-                console.error(error);
+            // Função para mostrar a view correta
+            function showView(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
+                document.getElementById(viewId).classList.add('visible');
             }
-        }
-        function renderModuleSelection() {
-            appContainer.innerHTML = `<div class="module-selection"><div class="module-card" data-module="intranet_geral.html"><h3>Intranet Geral</h3><p>Avisos, notícias e informações para todos.</p></div><div class="module-card" data-module="intranet_rh.html"><h3>Intranet RH</h3><p>Recursos humanos, vagas e comunicados.</p></div><div class="module-card" data-module="financeiro.html"><h3>Intranet Financeiro</h3><p>Painel de controle financeiro e relatórios.</p></div><div class="module-card" data-module="intranet_administrativo.html"><h3>Intranet Administrativo</h3><p>Processos, documentos e organização.</p></div><div class="module-card" data-module="intranet_servico_social.html"><h3>Intranet Serviço Social</h3><p>Atendimentos, casos e acompanhamentos.</p></div><div class="module-card" data-module="intranet_gestao.html"><h3>Intranet Gestão</h3><p>Relatórios gerenciais e planejamento estratégico.</p></div><div class="module-card" data-module="intranet_supervisao.html"><h3>Intranet Supervisão</h3><p>Acompanhamento de equipes e feedback.</p></div><div class="module-card" data-module="intranet_marketing.html"><h3>Intranet Marketing</h3><p>Campanhas, materiais e planejamento.</p></div><div class="module-card" data-module="intranet_captacao.html"><h3>Intranet Captação</h3><p>Leads, matrículas e funil de conversão.</p></div></div>`;
-            document.querySelectorAll('.module-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const moduleFile = card.getAttribute('data-module');
-                    loadModule(moduleFile);
+
+            // Monitora o estado da autenticação
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    // Usuário está logado, busca as permissões
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().funcoes && userDoc.data().funcoes.length > 0) {
+                        const funcoes = userDoc.data().funcoes;
+                        renderDashboard(user, funcoes); // Monta o dashboard com os links corretos
+                        showView('dashboard-view'); // Mostra o dashboard
+                    } else {
+                        // Usuário autenticado, mas sem permissão no Firestore
+                        document.body.innerHTML = `<div class="content-box"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões definidas. Contate o administrador.</p><button onclick="firebase.auth().signOut()">Sair</button></div>`;
+                    }
+                } else {
+                    // Usuário não está logado
+                    console.log("Nenhum usuário logado.");
+                    showView('login-view'); // Mostra a tela de login
+                }
+            });
+
+            // Função para montar o dashboard dinamicamente
+            function renderDashboard(user, funcoes) {
+                userPhoto.src = user.photoURL;
+                userName.textContent = user.displayName;
+                navLinks.innerHTML = ''; // Limpa os links antigos
+
+                // Define quais botões levam para quais "telas" (views)
+                const linksPorFuncao = {
+                    'financeiro': { titulo: '💰 Acesso Financeiro', view: 'financeiro-view' },
+                    'rh': { titulo: '👥 Recursos Humanos', view: 'rh-view' }
+                    // Adicione outras funções e views aqui
+                };
+
+                const botoesParaMostrar = new Set();
+
+                // Se o usuário for admin, ele vê todos os links.
+                if (funcoes.includes('admin')) {
+                    Object.values(linksPorFuncao).forEach(link => botoesParaMostrar.add(link));
+                } else {
+                    // Outros usuários veem apenas os botões de suas funções
+                    funcoes.forEach(funcao => {
+                        if (linksPorFuncao[funcao]) {
+                            botoesParaMostrar.add(linksPorFuncao[funcao]);
+                        }
+                    });
+                }
+
+                // Cria e adiciona os botões na tela
+                botoesParaMostrar.forEach(config => {
+                    const btn = document.createElement('button');
+                    btn.textContent = config.titulo;
+                    btn.onclick = () => showView(config.view); // Ao clicar, mostra a "tela" correspondente
+                    navLinks.appendChild(btn);
+                });
+            }
+
+            // Ação do botão de login
+            loginButton.addEventListener('click', () => {
+                showView('loading-view'); // Mostra "carregando" ao iniciar o login
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => {
+                    console.error("Erro durante o login com popup:", error);
+                    alert("Ocorreu um erro ao tentar fazer login: " + error.message);
+                    showView('login-view'); // Volta para a tela de login em caso de erro
                 });
             });
-        }
-        
-        // --- CONTROLE PRINCIPAL DE AUTENTICAÇÃO ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userInfo.textContent = user.email;
-                authView.classList.add('hidden');
-                appView.classList.remove('hidden');
-                renderModuleSelection();
-                setupActivityListeners();
-                resetInactivityTimer();
-            } else {
-                authView.classList.remove('hidden');
-                appView.classList.add('hidden');
-                document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.';
-                loginButton.classList.remove('hidden');
-                stopInactivityTimer();
-                removeActivityListeners();
-            }
-        });
 
-        loginButton.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
-            signInWithPopup(auth, provider);
-        });
+            // Ação do botão de logout
+            logoutButton.addEventListener('click', () => {
+                auth.signOut();
+            });
 
-        logoutButton.addEventListener('click', () => signOut(auth));
+            // Inicia mostrando a tela de carregamento para evitar piscar a tela de login
+            showView('loading-view');
+        });
     </script>
 </body>
 </html>
