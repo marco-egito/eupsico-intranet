@@ -1,8 +1,8 @@
-/* Adicione ou substitua estes estilos no seu arquivo css/portal.css */
+/* css/portal.css */
 
-/* Remove o padding antigo da tela de login para centralizar o card */
+/* Estilos da Tela de Login */
 .auth-view {
-    padding-top: 0;
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -10,73 +10,151 @@
     box-sizing: border-box;
 }
 
-/* Estilo para o "card" branco de login */
 .login-card {
     background-color: white;
     padding: 40px 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     text-align: center;
     max-width: 400px;
     width: 100%;
 }
 
 .login-logo {
-    width: 80px;  /* Ajuste o tamanho do logo conforme necessário */
-    height: 80px; /* Ajuste o tamanho do logo conforme necessário */
-    margin-bottom: 20px;
+    max-width: 150px;
+    height: auto;
+    margin-bottom: 24px;
 }
 
 .login-card h2 {
-    color: #004a7f;
+    color: #04396d;
     margin-top: 0;
+    font-size: 24px;
 }
 
 .login-card p {
     color: #555;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    font-size: 16px;
 }
 
-/* Botão de Login Estilo Google (com seletor mais específico) */
-.login-card .google-login-button {
-    /* Estrutura e Alinhamento */
-    display: inline-flex;
+/* NOVO Estilo para o Botão de Login (Azul e sem ícone) */
+.login-card .login-button {
+    background-color: #04396d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    height: 44px;
+    padding: 0 30px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.login-card .login-button:hover {
+    background-color: #032b50;
+    transform: scale(1.02);
+}
+
+/* Estilos do Portal Principal */
+.top-bar {
+    width: 100%;
+    background-color: #ffffff;
+    color: #333;
+    padding: 15px 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.top-bar h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #04396d;
+}
+
+.top-bar #user-info {
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.top-bar #logout-button {
+    background-color: transparent;
+    border: 1px solid #04396d;
+    color: #04396d;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.top-bar #logout-button:hover {
+    background-color: #04396d;
+    color: white;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 30px;
+}
+        
+/* NOVO Estilo para a Seleção de Módulos (Cards com ícones) */
+.page-title {
+    font-size: 28px;
+    color: #04396d;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.module-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.module-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 25px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.module-card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background-color: #eef5ff;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px; /* Espaço entre o ícone e o texto */
+    color: #04396d;
+}
 
-    /* Estilo Visual */
-    background-color: #ffffff;
-    color: #3c4043;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    
-    /* Fontes */
-    font-family: "Google Sans", Roboto, Arial, sans-serif;
+.module-card-text h3 {
+    margin: 0 0 5px 0;
+    color: #04396d;
+    font-size: 18px;
+}
+
+.module-card-text p {
+    margin: 0;
+    color: #666;
     font-size: 14px;
-    font-weight: 500;
-    
-    /* Tamanho e Espaçamento */
-    height: 40px;
-    padding: 0 24px 0 12px;
-    
-    /* Comportamento */
-    cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-.login-card .google-login-button:hover {
-    background-color: #f8f9fa;
-    border-color: #c6c9ce;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.login-card .google-login-button::before {
-    content: '';
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNCAuOCA2LTEuOUwzIDFsLTMgMS45YTkgOSAwIDAgMCAxNSA1LjF6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgzYTkgOSAwIDAgMCAwIDhsMS0xLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwxLjMgMi40YzEtMS4zIDMtMi4xIDQuNy0yLjF6IiBmaWxsPSIjRUE0MzM1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNMCAwaDE4djE4SDB6Ii8+PC9nPjwvc3ZnPg==");
-    background-repeat: no-repeat;
-    background-size: 18px;
 }
