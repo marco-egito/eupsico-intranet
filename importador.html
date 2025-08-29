@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Importador de Dados para Firestore</title>
+    <title>Importador e Criador de Usuários em Lote</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; }
-        select, input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
         button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; }
         button:disabled { background-color: #6c757d; cursor: not-allowed; }
         #log { border: 1px solid #ccc; background-color: #333; color: #fff; margin-top: 20px; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; }
@@ -20,31 +20,25 @@
 </head>
 <body>
     <div class="container">
-        <h1>Importar Planilha Excel para o Firestore</h1>
-        <p>Esta ferramenta lê um arquivo .xlsx e envia os dados para a coleção selecionada no Firestore. A primeira linha da planilha deve conter os nomes dos campos.</p>
+        <h1>Importar e Criar Novos Usuários em Lote</h1>
+        <p>Esta ferramenta lê um arquivo .xlsx e chama a Cloud Function para criar cada usuário na Autenticação e no Firestore, já com seu UID.</p>
+        <p><strong>Atenção:</strong> Você precisa estar logado como Administrador para usar esta função.</p>
 
         <div class="form-group">
-            <label for="collection-selector">1. Selecione a Coleção de Destino:</label>
-            <select id="collection-selector">
-                <option value="">-- Escolha uma coleção --</option>
-                <option value="usuarios">Usuários</option>
-                <option value="financeiro/fluxoCaixa/lancamentos">Lançamentos (Fluxo de Caixa)</option>
-                </select>
-        </div>
-
-        <div class="form-group">
-            <label for="file-input">2. Selecione o Arquivo Excel (.xlsx):</label>
+            <label for="file-input">1. Selecione o Arquivo Excel (.xlsx) com os novos usuários:</label>
             <input type="file" id="file-input" accept=".xlsx, .xls">
         </div>
 
-        <button id="import-btn">3. Iniciar Importação</button>
+        <button id="import-btn" disabled>2. Iniciar Criação em Lote</button>
 
         <h3>Log da Importação:</h3>
-        <div id="log">Aguardando arquivo...</div>
+        <div id="log">Aguardando login...</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-functions-compat.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
@@ -57,11 +51,11 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const functions = firebase.functions();
         
         const importBtn = document.getElementById('import-btn');
         const fileInput = document.getElementById('file-input');
-        const collectionSelect = document.getElementById('collection-selector');
         const logDiv = document.getElementById('log');
 
         function log(message, type = 'info') {
@@ -69,79 +63,98 @@
             logDiv.scrollTop = logDiv.scrollHeight;
         }
 
-        importBtn.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            const collectionName = collectionSelect.value;
+        auth.onAuthStateChanged((user) => {
+             if (user) {
+                importBtn.disabled = false;
+                log('Usuário autenticado. Pronto para importar.', 'success');
+             } else {
+                importBtn.disabled = true;
+                log('Você precisa estar logado no painel principal para usar esta ferramenta.', 'error');
+             }
+        });
 
+        importBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
             if (!file) {
                 log('Por favor, selecione um arquivo Excel.', 'error');
-                return;
-            }
-            if (!collectionName) {
-                log('Por favor, selecione uma coleção de destino.', 'error');
                 return;
             }
 
             importBtn.disabled = true;
             importBtn.textContent = 'Processando...';
-            log(`Iniciando importação para a coleção: "${collectionName}"`);
+            log(`Iniciando importação do arquivo: "${file.name}"`);
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
                     if (jsonData.length === 0) {
-                        log('A planilha parece estar vazia.', 'error');
-                        return;
+                        throw new Error('A planilha parece estar vazia.');
                     }
                     
-                    log(`Planilha lida com sucesso. ${jsonData.length} linhas encontradas.`);
-                    log('Iniciando envio para o Firestore. Isso pode levar um momento...');
+                    log(`Planilha lida com sucesso. ${jsonData.length} usuários encontrados.`);
+                    log('Iniciando chamadas para a Cloud Function. Isso pode demorar...');
 
-                    // Usar um batch para enviar todos os dados de uma vez (mais eficiente)
-                    const batch = db.batch();
-                    
-                    jsonData.forEach(row => {
-                        let processedRow = { ...row };
+                    const criarUsuario = functions.httpsCallable('criarUsuarioComDados');
+                    let successCount = 0;
+                    let errorCount = 0;
 
-                        // Transformação de dados: Converte "admin,financeiro" em um array
-                        if (processedRow.funcoes && typeof processedRow.funcoes === 'string') {
-                            processedRow.funcoes = processedRow.funcoes.split(',').map(f => f.trim()).filter(Boolean);
+                    for (const row of jsonData) {
+                        // --- INÍCIO DA CORREÇÃO ---
+                        // "Limpa" os dados da linha antes de enviar para garantir que não há valores 'undefined'
+                        const sanitizedUserData = {
+                            nome: row.nome || '',
+                            email: row.email || '',
+                            contato: row.contato || '',
+                            profissao: row.profissao || 'Não especificada',
+                            funcoes: (typeof row.funcoes === 'string') ? row.funcoes.split(',').map(f => f.trim()).filter(Boolean) : [],
+                            fazAtendimento: String(row.fazAtendimento).toUpperCase() === 'TRUE',
+                            primeiraFase: String(row.primeiraFase).toUpperCase() === 'TRUE',
+                            recebeDireto: String(row.recebeDireto).toUpperCase() === 'TRUE',
+                            inativo: String(row.inativo).toUpperCase() === 'TRUE'
+                        };
+                        // --- FIM DA CORREÇÃO ---
+
+                        if (!sanitizedUserData.email) {
+                            log(` -> FALHA: Linha ignorada por não conter um e-mail.`, 'error');
+                            errorCount++;
+                            continue; // Pula para a próxima linha
                         }
+
+                        log(`Processando: ${sanitizedUserData.email}...`);
                         
-                        // Garante que campos booleanos sejam salvos como boolean
-                        for (const key in processedRow) {
-                            if (String(processedRow[key]).toUpperCase() === 'TRUE') {
-                                processedRow[key] = true;
-                            } else if (String(processedRow[key]).toUpperCase() === 'FALSE') {
-                                processedRow[key] = false;
-                            }
+                        try {
+                            // Chama a Cloud Function com os dados já limpos
+                            await criarUsuario(sanitizedUserData);
+                            log(` -> SUCESSO: Usuário ${sanitizedUserData.email} criado.`, 'success');
+                            successCount++;
+                        } catch (error) {
+                            log(` -> FALHA ao criar ${sanitizedUserData.email}: ${error.message}`, 'error');
+                            errorCount++;
                         }
+                    }
 
-                        const docRef = db.collection(collectionName).doc(); // Cria um novo documento com ID automático
-                        batch.set(docRef, processedRow);
-                    });
-                    
-                    await batch.commit();
-
-                    log(`${jsonData.length} registros importados com sucesso para "${collectionName}"!`, 'success');
+                    log('------------------------------------', 'info');
+                    log(`Processo concluído!`, 'info');
+                    log(`- ${successCount} usuários criados com sucesso.`, 'success');
+                    log(`- ${errorCount} falharam ou foram ignorados.`, 'error');
 
                 } catch (error) {
-                    log(`ERRO: ${error.message}`, 'error');
+                    log(`ERRO GERAL: ${error.message}`, 'error');
                     console.error(error);
                 } finally {
                     importBtn.disabled = false;
-                    importBtn.textContent = '3. Iniciar Importação';
+                    importBtn.textContent = '2. Iniciar Criação em Lote';
+                    fileInput.value = '';
                 }
             };
             reader.readAsArrayBuffer(file);
         });
-
     </script>
 </body>
 </html>
