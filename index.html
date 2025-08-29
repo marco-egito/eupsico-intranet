@@ -3,55 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro - EuPsico</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; color: #333; }
-        .main-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 240px; background-color: #004a7f; color: white; padding: 15px; flex-shrink: 0; }
-        .sidebar h2 { text-align: center; }
-        .sidebar ul { list-style: none; padding: 0; }
-        .sidebar ul li button {
-            width: 100%; background: none; border: none; color: white; padding: 12px; text-align: left;
-            cursor: pointer; font-size: 1em; border-radius: 5px; transition: background-color 0.2s;
-        }
-        .sidebar ul li button:hover, .sidebar ul li button.active { background-color: #005a87; }
-        .content { flex-grow: 1; padding: 20px; }
-        #app-container { min-height: 80vh; }
-        .hidden { display: none; }
-        .auth-view { text-align: center; padding-top: 50px; }
-        .auth-view button { padding: 10px 20px; font-size: 1em; cursor: pointer; background-color: #007bff; color:white; border:none; border-radius: 5px; }
-    </style>
+    <title>Intranet EuPsico</title>
+    
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/portal.css">
 </head>
 <body>
 
-    <div id="auth-view" class="auth-view">
-        <h2>Painel Financeiro EuPsico</h2>
+    <div id="auth-view">
+        <h2>Intranet EuPsico</h2>
         <p id="auth-message">Verificando autenticação...</p>
         <button id="login-button" class="hidden">Login com Google</button>
     </div>
 
-    <div id="app-view" class="main-container hidden">
-        <nav class="sidebar">
-            <h2>Financeiro</h2>
-            <ul>
-                <li><button class="nav-button" data-page="dashboard_financeiro.html">Dashboard</button></li>
-                <li><button class="nav-button" data-page="lancamentos_financeiros.html">Lançamentos</button></li>
-                <li><button class="nav-button" data-page="cobranca_mensal.html">Cobrança Mensal</button></li>
-                <li><button class="nav-button" data-page="controle_pagamentos.html">Controle de Pagamentos</button></li>
-                <li><button class="nav-button" data-page="resumo_horas.html">Resumo de Horas</button></li>
-                <li><button class="nav-button" data-page="devedores.html">Devedores</button></li>
-                <li><button class="nav-button" data-page="acordos.html">Acordos</button></li>
-                <li><button class="nav-button" data-page="repasse_profissionais.html">Repasse Profissionais</button></li>
-                <li><button class="nav-button" data-page="envio_comprovantes.html">Envio de Comprovantes</button></li>
-                <hr style="border-color: #005a87;">
-                <li><button class="nav-button" data-page="configuracoes.html">Configurações</button></li>
-                <li><button class="nav-button" data-page="relatorios_backup.html">Relatórios e Backup</button></li>
-            </ul>
-            <button id="logout-button" style="width: 100%; margin-top: 20px; background-color:#dc3545; border:none; color:white; padding:10px; cursor:pointer; border-radius: 5px;">Sair</button>
-        </nav>
-        <main class="content">
-            <div id="app-container">Carregando...</div>
-        </main>
+    <div id="app-view" class="hidden">
+        <header class="top-bar">
+            <h1>Intranet EuPsico</h1>
+            <div>
+                <span id="user-info"></span>
+                <button id="logout-button">Sair</button>
+            </div>
+        </header>
+        <main id="app-container" class="content">
+            </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -59,25 +33,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
     <script type="module">
+        // Seu JavaScript continua aqui, sem nenhuma alteração necessária.
+        // ... (cole aqui todo o script da resposta anterior)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-             apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-              projectId: "eupsico-agendamentos-d2048",
-              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-              messagingSenderId: "1041518416343",
-              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-                    };
         
+        const firebaseConfig = {
+        apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+        authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+        databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+        projectId: "eupsico-agendamentos-d2048",
+        storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+        messagingSenderId: "1041518416343",
+        appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Disponibilize o `db` e o `auth` globalmente para que as páginas carregadas (como configuracoes.html) possam acessá-los.
         window.db = db;
         window.auth = auth;
 
@@ -86,73 +61,21 @@
         const loginButton = document.getElementById('login-button');
         const logoutButton = document.getElementById('logout-button');
         const appContainer = document.getElementById('app-container');
+        const userInfo = document.getElementById('user-info');
+        
+        let inactivityTimer;
+        function resetInactivityTimer() { clearTimeout(inactivityTimer); inactivityTimer = setTimeout(() => { alert("Sua sessão expirou por inatividade. Por favor, faça o login novamente."); signOut(auth); }, 40 * 60 * 1000); }
+        function stopInactivityTimer() { clearTimeout(inactivityTimer); }
+        const userActivityEvents = ['mousemove', 'mousedown', 'click', 'scroll', 'keydown'];
+        function setupActivityListeners() { userActivityEvents.forEach(event => { window.addEventListener(event, resetInactivityTimer, true); }); }
+        function removeActivityListeners() { userActivityEvents.forEach(event => { window.removeEventListener(event, resetInactivityTimer, true); }); }
 
-        async function loadPage(page) {
-            try {
-                appContainer.innerHTML = 'Carregando...';
-                const response = await fetch(page);
-                if (!response.ok) throw new Error(`Página não encontrada (${response.status})`);
-                
-                const pageContent = await response.text();
-                appContainer.innerHTML = pageContent;
+        async function loadModule(moduleFile) { try { appContainer.innerHTML = 'Carregando módulo...'; const response = await fetch(moduleFile); if (!response.ok) throw new Error(`Módulo não encontrado (${response.status})`); const moduleContent = await response.text(); appContainer.innerHTML = moduleContent; const scripts = appContainer.querySelectorAll('script'); scripts.forEach(script => { const newScript = document.createElement('script'); newScript.text = script.innerText; if (script.type === 'module' || script.innerHTML.includes('import')) { newScript.type = 'module'; } document.body.appendChild(newScript).parentNode.removeChild(newScript); }); } catch (error) { appContainer.innerHTML = `<p style="color:red;">Erro ao carregar o módulo: ${error.message}</p>`; console.error(error); } }
+        function renderModuleSelection() { appContainer.innerHTML = `<div class="module-selection"><div class="module-card" data-module="intranet_geral.html"><h3>Intranet Geral</h3><p>Avisos, notícias e informações para todos.</p></div><div class="module-card" data-module="intranet_rh.html"><h3>Intranet RH</h3><p>Recursos humanos, vagas e comunicados.</p></div><div class="module-card" data-module="financeiro.html"><h3>Intranet Financeiro</h3><p>Painel de controle financeiro e relatórios.</p></div><div class="module-card" data-module="intranet_administrativo.html"><h3>Intranet Administrativo</h3><p>Processos, documentos e organização.</p></div><div class="module-card" data-module="intranet_servico_social.html"><h3>Intranet Serviço Social</h3><p>Atendimentos, casos e acompanhamentos.</p></div><div class="module-card" data-module="intranet_gestao.html"><h3>Intranet Gestão</h3><p>Relatórios gerenciais e planejamento estratégico.</p></div><div class="module-card" data-module="intranet_supervisao.html"><h3>Intranet Supervisão</h3><p>Acompanhamento de equipes e feedback.</p></div><div class="module-card" data-module="intranet_marketing.html"><h3>Intranet Marketing</h3><p>Campanhas, materiais e planejamento.</p></div><div class="module-card" data-module="intranet_captacao.html"><h3>Intranet Captação</h3><p>Leads, matrículas e funil de conversão.</p></div></div>`; document.querySelectorAll('.module-card').forEach(card => { card.addEventListener('click', () => { const moduleFile = card.getAttribute('data-module'); loadModule(moduleFile); }); }); }
 
-                const scripts = appContainer.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    newScript.text = script.innerText;
-                    // É crucial que o script seja type="module" se ele também usar a sintaxe modular
-                    if (script.type === 'module' || script.innerHTML.includes('import')) {
-                        newScript.type = 'module';
-                    }
-                    document.body.appendChild(newScript).parentNode.removeChild(newScript);
-                });
-            } catch (error) {
-                appContainer.innerHTML = `<p style="color:red;">Erro ao carregar a página: ${error.message}</p>`;
-                console.error(error);
-            }
-        }
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Nova sintaxe para buscar um documento
-                const userDocRef = doc(db, 'usuarios', user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-
-                const funcoes = userDocSnap.exists() ? userDocSnap.data().funcoes || [] : [];
-
-                if (funcoes.includes('admin') || funcoes.includes('financeiro')) {
-                    authView.classList.add('hidden');
-                    appView.classList.remove('hidden');
-                    document.querySelector('.nav-button').click(); 
-                } else {
-                    authView.classList.remove('hidden');
-                    appView.classList.add('hidden');
-                    document.getElementById('auth-message').innerText = 'Acesso Negado. Você não tem permissão para acessar este painel.';
-                    await signOut(auth); // Desloga o usuário se não tiver permissão
-                }
-            } else {
-                authView.classList.remove('hidden');
-                appView.classList.add('hidden');
-                document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.';
-                loginButton.classList.remove('hidden');
-            }
-        });
-
-        loginButton.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider);
-        });
-
+        onAuthStateChanged(auth, async (user) => { if (user) { userInfo.textContent = user.email; authView.classList.add('hidden'); appView.classList.remove('hidden'); renderModuleSelection(); setupActivityListeners(); resetInactivityTimer(); } else { authView.classList.remove('hidden'); appView.classList.add('hidden'); document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.'; loginButton.classList.remove('hidden'); stopInactivityTimer(); removeActivityListeners(); } });
+        loginButton.addEventListener('click', () => { const provider = new GoogleAuthProvider(); signInWithPopup(auth, provider); });
         logoutButton.addEventListener('click', () => signOut(auth));
-
-        document.querySelectorAll('.nav-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                const pageFile = e.target.getAttribute('data-page');
-                loadPage(pageFile);
-            });
-        });
     </script>
 </body>
 </html>
