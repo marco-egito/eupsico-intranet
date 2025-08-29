@@ -1,4 +1,4 @@
-// js/main.js
+// js/main.js (Versão Limpa e Final)
 
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -14,7 +14,7 @@ const logoutButton = document.getElementById('logout-button');
 const appContainer = document.getElementById('app-container');
 const userInfo = document.getElementById('user-info');
 
-// ... (lógica de logout por inatividade permanece a mesma) ...
+// --- LÓGICA DE LOGOUT AUTOMÁTICO ---
 let inactivityTimer;
 function resetInactivityTimer() { clearTimeout(inactivityTimer); inactivityTimer = setTimeout(() => { alert("Sua sessão expirou por inatividade."); signOut(auth); }, 40 * 60 * 1000); }
 function stopInactivityTimer() { clearTimeout(inactivityTimer); }
@@ -22,12 +22,30 @@ const userActivityEvents = ['mousemove', 'mousedown', 'click', 'scroll', 'keydow
 function setupActivityListeners() { userActivityEvents.forEach(event => { window.addEventListener(event, resetInactivityTimer, true); }); }
 function removeActivityListeners() { userActivityEvents.forEach(event => { window.removeEventListener(event, resetInactivityTimer, true); }); }
 
+// --- LÓGICA DE CARREGAMENTO DE MÓDULOS ---
 async function loadModule(moduleFile) {
-    // ... (lógica de carregamento de módulos permanece a mesma) ...
-    try { appContainer.innerHTML = 'Carregando módulo...'; const response = await fetch(moduleFile); if (!response.ok) throw new Error(`Módulo não encontrado (${response.status})`); const moduleContent = await response.text(); appContainer.innerHTML = moduleContent; const scripts = appContainer.querySelectorAll('script'); scripts.forEach(script => { const newScript = document.createElement('script'); newScript.text = script.innerText; if (script.type === 'module' || script.innerHTML.includes('import')) { newScript.type = 'module'; } document.body.appendChild(newScript).parentNode.removeChild(newScript); }); } catch (error) { appContainer.innerHTML = `<p style="color:red;">Erro: ${error.message}</p>`; console.error(error); }
+    try {
+        appContainer.innerHTML = 'Carregando módulo...';
+        const response = await fetch(moduleFile);
+        if (!response.ok) throw new Error(`Módulo não encontrado (${response.status})`);
+        const moduleContent = await response.text();
+        appContainer.innerHTML = moduleContent;
+        const scripts = appContainer.querySelectorAll('script');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            newScript.text = script.innerText;
+            if (script.type === 'module' || script.innerHTML.includes('import')) {
+                newScript.type = 'module';
+            }
+            document.body.appendChild(newScript).parentNode.removeChild(newScript);
+        });
+    } catch (error) {
+        appContainer.innerHTML = `<p style="color:red;">Erro: ${error.message}</p>`;
+        console.error(error);
+    }
 }
 
-// NOVO: Lista de módulos para fácil gerenciamento
+// Lista de módulos para fácil gerenciamento
 const modules = [
     { file: "intranet_geral.html", title: "Intranet Geral", description: "Avisos, notícias e informações para todos.", icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V17h6v-1.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V17h6V9H6v1.5a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V6Z"/><path d="M16 3v4"/><path d="M8 3v4"/></svg>` },
     { file: "intranet_rh.html", title: "Intranet RH", description: "Recursos humanos, vagas e comunicados.", icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
@@ -37,7 +55,6 @@ const modules = [
     { file: "intranet_supervisao.html", title: "Intranet Supervisão", description: "Acompanhamento de equipes e feedback.", icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>` },
 ];
 
-// NOVO: Função renderModuleSelection atualizada
 function renderModuleSelection() {
     let cardsHtml = modules.map(module => `
         <div class="module-card" data-module="${module.file}">
@@ -64,8 +81,21 @@ function renderModuleSelection() {
 
 // --- CONTROLE PRINCIPAL DE AUTENTICAÇÃO E EVENTOS ---
 onAuthStateChanged(auth, async (user) => {
-    // ... (lógica de autenticação permanece a mesma) ...
-    if (user) { userInfo.textContent = user.email; authView.classList.add('hidden'); appView.classList.remove('hidden'); renderModuleSelection(); setupActivityListeners(); resetInactivityTimer(); } else { authView.classList.remove('hidden'); appView.classList.add('hidden'); document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.'; loginButton.classList.remove('hidden'); stopInactivityTimer(); removeActivityListeners(); }
+    if (user) {
+        userInfo.textContent = user.email;
+        authView.classList.add('hidden');
+        appView.classList.remove('hidden');
+        renderModuleSelection();
+        setupActivityListeners();
+        resetInactivityTimer();
+    } else {
+        authView.classList.remove('hidden');
+        appView.classList.add('hidden');
+        document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.';
+        loginButton.classList.remove('hidden');
+        stopInactivityTimer();
+        removeActivityListeners();
+    }
 });
 
 loginButton.addEventListener('click', () => {
