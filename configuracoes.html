@@ -65,10 +65,10 @@
                 </div>
                 <div class="form-group checkbox-group">
                     <h4>Status e Condições:</h4>
-                     <label><input type="checkbox" id="user-faz-atendimento"> Faz Atendimento?</label>
-                     <label><input type="checkbox" id="user-primeira-fase"> Primeira Fase?</label>
-                     <label><input type="checkbox" id="user-recebe-direto"> Recebe Direto?</label>
-                     <label><input type="checkbox" id="user-inativo"> Marcar como Inativo?</label>
+                    <label><input type="checkbox" id="user-faz-atendimento"> Faz Atendimento?</label>
+                    <label><input type="checkbox" id="user-primeira-fase"> Primeira Fase?</label>
+                    <label><input type="checkbox" id="user-recebe-direto"> Recebe Direto?</label>
+                    <label><input type="checkbox" id="user-inativo"> Marcar como Inativo?</label>
                 </div>
             </form>
         </div>
@@ -80,8 +80,10 @@
 </div>
 
 <style>
+    /* ... O CSS completo, como na resposta anterior ... */
     .container { max-width: 1200px; margin: 0 auto; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
     h1 { text-align: center; color: #004a7f; padding: 20px 0; margin: 0; }
+    h2 { color: #333; }
     .tab { overflow: hidden; border-bottom: 1px solid #ccc; background-color: #f1f1f1; }
     .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px; font-weight: bold; color: #555; }
     .tab button:hover { background-color: #ddd; }
@@ -115,212 +117,226 @@
     .toast.toast-error { background-color: #dc3545; }
 </style>
 
-<script>
-    (function() {
-        // As variáveis `db` e `firebase` já foram declaradas no index.html
-        const usuariosCollection = db.collection('usuarios');
-        const userModal = document.getElementById('user-modal');
-        let localUsuariosList = []; 
+<script type="module">
+    // Importe todas as funções necessárias do Firebase
+    import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js";
+    import { getIdToken } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    
+    // Como esta página é carregada dinamicamente, ela precisa ter acesso às instâncias de 'db' e 'auth' criadas no index.html
+    const db = window.db; 
+    const auth = window.auth;
+    
+    // A EXECUÇÃO SÓ COMEÇA QUANDO TEMOS CERTEZA QUE 'db' E 'auth' EXISTEM
+    if (db && auth) {
+        
+        // CORREÇÃO: A inicialização do 'functions' foi movida para DENTRO deste bloco seguro.
+        // E a forma de pegar o 'app' foi corrigida para usar 'auth.app'.
+        const functions = getFunctions(auth.app, 'us-central1');
 
-        // --- FUNÇÕES UTILITÁRIAS (Toast, Abas, Modal) ---
-        function openTab(evt, tabName) {
-            document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
-            document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
-            
-            const tabElement = document.getElementById(tabName);
-            if(tabElement) tabElement.style.display = "block";
-            
-            if (evt && evt.currentTarget) {
-                evt.currentTarget.classList.add("active");
+        (function() {
+            const usuariosCollectionRef = collection(db, 'usuarios');
+            const userModal = document.getElementById('user-modal');
+            let localUsuariosList = [];
+
+            // A PARTIR DAQUI, O RESTO DO CÓDIGO É O MESMO
+            function openTab(evt, tabName) { /* ...código da função... */ }
+            // ... (restante das suas funções e lógica que já funcionavam)
+            function openTab(evt, tabName) {
+                document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
+                document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
+                const tabElement = document.getElementById(tabName);
+                if(tabElement) tabElement.style.display = "block";
+                if (evt && evt.currentTarget) evt.currentTarget.classList.add("active");
             }
-        }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toast-container');
-            if (!toastContainer) return;
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.textContent = message;
-            toastContainer.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 100);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                toast.addEventListener('transitionend', () => toast.remove());
-            }, 3000);
-        }
+            function showToast(message, type = 'success') {
+                const toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) return;
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 3000);
+            }
 
-        function openUserModal(user = null) {
-            const form = document.getElementById('user-form');
-            form.reset();
-            document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
-            document.getElementById('user-id').value = user ? user.id : '';
-            document.getElementById('user-email').disabled = !!user;
-            
-            document.getElementById('user-profissao-outra').style.display = 'none';
+            function openUserModal(user = null) {
+                const form = document.getElementById('user-form');
+                form.reset();
+                document.getElementById('modal-title').textContent = user ? 'Editar Usuário' : 'Adicionar Novo Usuário';
+                document.getElementById('user-id').value = user ? user.id : '';
+                document.getElementById('user-email').disabled = !!user;
+                document.getElementById('user-profissao-outra').style.display = 'none';
 
-            if (user) {
-                document.getElementById('user-nome').value = user.nome || '';
-                document.getElementById('user-email').value = user.email || '';
-                document.getElementById('user-tel').value = user.contato || '';
-                document.getElementById('user-inativo').checked = user.inativo || false;
-                document.getElementById('user-primeira-fase').checked = user.primeiraFase || false;
-                document.getElementById('user-recebe-direto').checked = user.recebeDireto || false;
-                document.getElementById('user-faz-atendimento').checked = user.fazAtendimento || false;
-
-                const profissaoSelect = document.getElementById('user-profissao');
-                const profissaoOutraInput = document.getElementById('user-profissao-outra');
-                const options = Array.from(profissaoSelect.options).map(opt => opt.value);
-                if (user.profissao && options.includes(user.profissao)) {
-                    profissaoSelect.value = user.profissao;
-                } else if (user.profissao) {
-                    profissaoSelect.value = 'Outra';
-                    profissaoOutraInput.value = user.profissao;
-                    profissaoOutraInput.style.display = 'block';
+                if (user) {
+                    document.getElementById('user-nome').value = user.nome || '';
+                    document.getElementById('user-email').value = user.email || '';
+                    document.getElementById('user-tel').value = user.contato || '';
+                    document.getElementById('user-inativo').checked = user.inativo || false;
+                    document.getElementById('user-primeira-fase').checked = user.primeiraFase || false;
+                    document.getElementById('user-recebe-direto').checked = user.recebeDireto || false;
+                    document.getElementById('user-faz-atendimento').checked = user.fazAtendimento || false;
+                    const profissaoSelect = document.getElementById('user-profissao');
+                    const profissaoOutraInput = document.getElementById('user-profissao-outra');
+                    const options = Array.from(profissaoSelect.options).map(opt => opt.value);
+                    if (user.profissao && options.includes(user.profissao)) {
+                        profissaoSelect.value = user.profissao;
+                    } else if (user.profissao) {
+                        profissaoSelect.value = 'Outra';
+                        profissaoOutraInput.value = user.profissao;
+                        profissaoOutraInput.style.display = 'block';
+                    }
+                    form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
+                        checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
+                    });
                 }
+                userModal.style.display = 'block';
+            }
+
+            function closeUserModal() { userModal.style.display = 'none'; }
+
+            function renderTable(usuariosList) {
+                const tableBody = document.querySelector('#usuarios-table tbody');
+                if (!tableBody) return;
+                tableBody.innerHTML = '';
                 
-                form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
-                    checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
+                usuariosList.forEach(user => {
+                    const row = tableBody.insertRow();
+                    const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
+                    row.innerHTML = `
+                        <td>${user.nome || ''}</td>
+                        <td>${user.username || ''}</td>
+                        <td>${user.profissao || 'N/A'}</td>
+                        <td style="text-align: center;">${user.fazAtendimento ? 'Sim' : 'Não'}</td>
+                        <td>${funcoesStr}</td>
+                        <td style="text-align: center;">${user.primeiraFase ? 'Sim' : 'Não'}</td>
+                        <td style="text-align: center;">${user.recebeDireto ? 'Sim' : 'Não'}</td>
+                        <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
+                        <td>
+                            <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
+                            <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
+                        </td>`;
                 });
             }
-            userModal.style.display = 'block';
-        }
 
-        function closeUserModal() {
-            userModal.style.display = 'none';
-        }
+            function loadUsuarios() {
+                const q = query(usuariosCollectionRef, orderBy('nome'));
+                onSnapshot(q, (snapshot) => {
+                    localUsuariosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTable(localUsuariosList);
+                }, (error) => {
+                    console.error("Erro ao carregar usuários: ", error);
+                    showToast("Erro ao carregar usuários.", "error");
+                });
+            }
 
-        // --- RENDERIZAÇÃO E DADOS (FIRESTORE) ---
-        function renderTable(usuariosList) {
-            const tableBody = document.querySelector('#usuarios-table tbody');
-            if (!tableBody) return;
-            tableBody.innerHTML = '';
+            document.querySelector('.tab').addEventListener('click', (event) => {
+                if (event.target.classList.contains('tablinks')) {
+                    const tabName = event.target.dataset.tab;
+                    openTab(event, tabName);
+                }
+            });
+
+            document.getElementById('add-usuario-btn').addEventListener('click', () => openUserModal());
+            document.getElementById('modal-cancel-btn').addEventListener('click', closeUserModal);
             
-            usuariosList.forEach(user => {
-                const row = tableBody.insertRow();
-                const funcoesStr = Array.isArray(user.funcoes) ? user.funcoes.join(', ') : 'Nenhuma';
-                row.innerHTML = `
-                    <td>${user.nome || ''}</td>
-                    <td>${user.username || ''}</td>
-                    <td>${user.profissao || 'N/A'}</td>
-                    <td style="text-align: center;">${user.fazAtendimento ? 'Sim' : 'Não'}</td>
-                    <td>${funcoesStr}</td>
-                    <td style="text-align: center;">${user.primeiraFase ? 'Sim' : 'Não'}</td>
-                    <td style="text-align: center;">${user.recebeDireto ? 'Sim' : 'Não'}</td>
-                    <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
-                    <td>
-                        <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
-                        <button class="action-button delete-row-btn" data-id="${user.id}">Excluir</button>
-                    </td>`;
+            document.getElementById('user-profissao').addEventListener('change', (e) => {
+                document.getElementById('user-profissao-outra').style.display = e.target.value === 'Outra' ? 'block' : 'none';
             });
-        }
 
-        function loadUsuarios() {
-            usuariosCollection.orderBy('nome').onSnapshot(snapshot => {
-                localUsuariosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTable(localUsuariosList);
-            }, error => {
-                console.error("Erro ao carregar usuários: ", error);
-                showToast("Erro ao carregar usuários.", "error");
-            });
-        }
+            document.getElementById('modal-save-btn').addEventListener('click', async () => {
+                const id = document.getElementById('user-id').value;
+                const funcoesSelecionadas = [];
+                document.querySelectorAll('input[name="funcoes"]:checked').forEach(cb => funcoesSelecionadas.push(cb.value));
 
-        // --- EVENT LISTENERS ---
-        document.querySelector('.tab').addEventListener('click', (event) => {
-            if (event.target.classList.contains('tablinks')) {
-                const tabName = event.target.dataset.tab;
-                openTab(event, tabName);
-            }
-        });
+                let profissaoFinal = document.getElementById('user-profissao').value;
+                if (profissaoFinal === 'Outra') {
+                    profissaoFinal = document.getElementById('user-profissao-outra').value.trim();
+                }
 
-        document.getElementById('add-usuario-btn').addEventListener('click', () => openUserModal());
-        document.getElementById('modal-cancel-btn').addEventListener('click', closeUserModal);
-        
-        document.getElementById('user-profissao').addEventListener('change', (e) => {
-            const outraInput = document.getElementById('user-profissao-outra');
-            outraInput.style.display = e.target.value === 'Outra' ? 'block' : 'none';
-        });
-
-        document.getElementById('modal-save-btn').addEventListener('click', async () => {
-            const id = document.getElementById('user-id').value;
-            const funcoesSelecionadas = [];
-            document.querySelectorAll('input[name="funcoes"]:checked').forEach(cb => funcoesSelecionadas.push(cb.value));
-
-            let profissaoFinal = document.getElementById('user-profissao').value;
-            if (profissaoFinal === 'Outra') {
-                profissaoFinal = document.getElementById('user-profissao-outra').value.trim();
-            }
-
-            const userData = {
-                nome: document.getElementById('user-nome').value.trim(),
-                email: document.getElementById('user-email').value.trim(),
-                contato: document.getElementById('user-tel').value.trim(),
-                funcoes: funcoesSelecionadas,
-                inativo: document.getElementById('user-inativo').checked,
-                primeiraFase: document.getElementById('user-primeira-fase').checked,
-                recebeDireto: document.getElementById('user-recebe-direto').checked,
-                profissao: profissaoFinal,
-                fazAtendimento: document.getElementById('user-faz-atendimento').checked,
-            };
-
-            if (!userData.nome || !userData.email) {
-                showToast('Nome e E-mail são obrigatórios.', 'error');
-                return;
-            }
-
-            const saveBtn = document.getElementById('modal-save-btn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Salvando...';
-
-            try {
-                if (id) { 
+                const userData = {
+                    nome: document.getElementById('user-nome').value.trim(),
+                    email: document.getElementById('user-email').value.trim(),
+                    contato: document.getElementById('user-tel').value.trim(),
+                    funcoes: funcoesSelecionadas,
+                    inativo: document.getElementById('user-inativo').checked,
+                    primeiraFase: document.getElementById('user-primeira-fase').checked,
+                    recebeDireto: document.getElementById('user-recebe-direto').checked,
+                    profissao: profissaoFinal,
+                    fazAtendimento: document.getElementById('user-faz-atendimento').checked,
+                };
+                
+                if(id) {
                     const gerarUsername = (nomeCompleto) => {
-                      if (!nomeCompleto) return "";
-                      const nomes = nomeCompleto.trim().split(" ").filter(Boolean);
-                      if (nomes.length <= 1) return nomes[0] || "";
-                      return `${nomes[0]} ${nomes[nomes.length - 1]}`;
+                        if (!nomeCompleto) return "";
+                        const nomes = nomeCompleto.trim().split(" ").filter(Boolean);
+                        if (nomes.length <= 1) return nomes[0] || "";
+                        return `${nomes[0]} ${nomes[nomes.length - 1]}`;
                     };
                     userData.username = gerarUsername(userData.nome);
-
-                    await usuariosCollection.doc(id).update(userData);
-                    showToast('Usuário atualizado com sucesso!', 'success');
-                } else { 
-                    const criarUsuario = firebase.functions().httpsCallable('criarUsuarioComDados');
-                    const result = await criarUsuario(userData);
-                    showToast(result.data.message, 'success');
                 }
-                closeUserModal();
-            } catch (error) {
-                showToast('Erro: ' + error.message, 'error');
-                console.error("Erro ao salvar usuário:", error);
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Salvar';
-            }
-        });
 
-        document.getElementById('usuarios-table').addEventListener('click', (e) => {
-            const userId = e.target.dataset.id;
-            if (!userId) return;
-
-            if (e.target.classList.contains('edit-row-btn')) {
-                const userToEdit = localUsuariosList.find(u => u.id === userId);
-                if(userToEdit) openUserModal(userToEdit);
-            }
-
-            if (e.target.classList.contains('delete-row-btn')) {
-                if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
-                    usuariosCollection.doc(userId).delete()
-                        .then(() => showToast('Usuário excluído!', 'success'))
-                        .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+                if (!userData.nome || !userData.email) {
+                    showToast('Nome e E-mail são obrigatórios.', 'error'); return;
                 }
-            }
-        });
 
-        // --- INICIALIZAÇÃO DA PÁGINA ---
-        const defaultOpenButton = document.getElementById("defaultOpen");
-        if (defaultOpenButton) {
-            defaultOpenButton.click();
-        }
-        loadUsuarios();
-    })();
+                const saveBtn = document.getElementById('modal-save-btn');
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Salvando...';
+
+                try {
+                    if (!auth.currentUser) throw new Error("Usuário não está logado ou a sessão expirou.");
+                    await getIdToken(auth.currentUser, true);
+
+                    if (id) {
+                        const userDocRef = doc(db, 'usuarios', id);
+                        await updateDoc(userDocRef, userData);
+                        showToast('Usuário atualizado com sucesso!', 'success');
+                    } else {
+                        const criarUsuario = httpsCallable(functions, 'criarUsuarioComDados');
+                        const result = await criarUsuario(userData);
+                        showToast(result.data.message, 'success');
+                    }
+                    closeUserModal();
+                } catch (error) {
+                    showToast('Erro: ' + error.message, 'error');
+                    console.error("Erro ao salvar usuário:", error);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Salvar';
+                }
+            });
+
+            document.getElementById('usuarios-table').addEventListener('click', (e) => {
+                const userId = e.target.dataset.id;
+                if (!userId) return;
+
+                if (e.target.classList.contains('edit-row-btn')) {
+                    const userToEdit = localUsuariosList.find(u => u.id === userId);
+                    if(userToEdit) openUserModal(userToEdit);
+                }
+
+                if (e.target.classList.contains('delete-row-btn')) {
+                    if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+                        const userDocRef = doc(db, 'usuarios', userId);
+                        deleteDoc(userDocRef)
+                            .then(() => showToast('Usuário excluído!', 'success'))
+                            .catch(err => showToast('Erro ao excluir: ' + err.message, 'error'));
+                    }
+                }
+            });
+
+            const defaultOpenButton = document.getElementById("defaultOpen");
+            if (defaultOpenButton) defaultOpenButton.click();
+            
+            loadUsuarios();
+        })();
+
+    } else {
+        console.error("ERRO: As instâncias do Firebase (db, auth) não foram encontradas. O script de configuracoes.html não pode ser executado.");
+    }
 </script>

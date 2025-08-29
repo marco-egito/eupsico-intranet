@@ -16,7 +16,7 @@
         }
         .sidebar ul li button:hover, .sidebar ul li button.active { background-color: #005a87; }
         .content { flex-grow: 1; padding: 20px; }
-        #app-container { min-height: 80vh; } /* Garante que o container tenha uma altura mínima */
+        #app-container { min-height: 80vh; }
         .hidden { display: none; }
         .auth-view { text-align: center; padding-top: 50px; }
         .auth-view button { padding: 10px 20px; font-size: 1em; cursor: pointer; background-color: #007bff; color:white; border:none; border-radius: 5px; }
@@ -54,29 +54,32 @@
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script> 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-functions-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-            projectId: "eupsico-agendamentos-d2048",
-            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
-            messagingSenderId: "1041518416343",
-            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
-        };
+             apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+              projectId: "eupsico-agendamentos-d2048",
+              storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+              messagingSenderId: "1041518416343",
+              appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+                    };
         
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore(); // USANDO FIRESTORE!
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Disponibilize o `db` e o `auth` globalmente para que as páginas carregadas (como configuracoes.html) possam acessá-los.
+        window.db = db;
+        window.auth = auth;
 
         const authView = document.getElementById('auth-view');
         const appView = document.getElementById('app-view');
@@ -97,6 +100,10 @@
                 scripts.forEach(script => {
                     const newScript = document.createElement('script');
                     newScript.text = script.innerText;
+                    // É crucial que o script seja type="module" se ele também usar a sintaxe modular
+                    if (script.type === 'module' || script.innerHTML.includes('import')) {
+                        newScript.type = 'module';
+                    }
                     document.body.appendChild(newScript).parentNode.removeChild(newScript);
                 });
             } catch (error) {
@@ -105,10 +112,13 @@
             }
         }
 
-        auth.onAuthStateChanged(async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                const funcoes = userDoc.exists ? userDoc.data().funcoes || [] : [];
+                // Nova sintaxe para buscar um documento
+                const userDocRef = doc(db, 'usuarios', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                const funcoes = userDocSnap.exists() ? userDocSnap.data().funcoes || [] : [];
 
                 if (funcoes.includes('admin') || funcoes.includes('financeiro')) {
                     authView.classList.add('hidden');
@@ -118,6 +128,7 @@
                     authView.classList.remove('hidden');
                     appView.classList.add('hidden');
                     document.getElementById('auth-message').innerText = 'Acesso Negado. Você não tem permissão para acessar este painel.';
+                    await signOut(auth); // Desloga o usuário se não tiver permissão
                 }
             } else {
                 authView.classList.remove('hidden');
@@ -128,11 +139,11 @@
         });
 
         loginButton.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider);
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider);
         });
 
-        logoutButton.addEventListener('click', () => auth.signOut());
+        logoutButton.addEventListener('click', () => signOut(auth));
 
         document.querySelectorAll('.nav-button').forEach(button => {
             button.addEventListener('click', (e) => {
