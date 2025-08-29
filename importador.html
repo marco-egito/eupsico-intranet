@@ -93,8 +93,7 @@
         importBtn.addEventListener('click', () => {
             const file = fileInput.files[0];
             if (!file) {
-                log('Por favor, selecione um arquivo Excel.', 'error');
-                return;
+                log('Por favor, selecione um arquivo Excel.', 'error'); return;
             }
 
             importBtn.disabled = true;
@@ -114,6 +113,11 @@
                     
                     log(`Planilha lida com sucesso. ${jsonData.length} usuários encontrados.`);
                     log('Iniciando chamadas para a Cloud Function. Isso pode demorar...');
+                    
+                    if (!auth.currentUser) throw new Error("Usuário não está logado ou a sessão expirou.");
+                    log('Atualizando token de autenticação antes de iniciar o lote...', 'info');
+                    await auth.currentUser.getIdToken(true); // RENOVA O TOKEN UMA VEZ
+                    log('Token atualizado. Iniciando processo em lote...', 'success');
 
                     const criarUsuario = functions.httpsCallable('criarUsuarioComDados');
                     let successCount = 0;
