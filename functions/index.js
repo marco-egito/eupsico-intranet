@@ -1,6 +1,7 @@
 // functions/index.js
 
-const functions = require("firebase-functions");
+// Importações para a V2 das Cloud Functions
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -13,27 +14,31 @@ const gerarUsername = (nomeCompleto) => {
   return `${nomes[0]} ${nomes[nomes.length - 1]}`;
 };
 
-exports.criarUsuarioComDados = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Você precisa estar logado para executar esta ação.");
+// Sintaxe V2 para exportar a função. A região é passada como um objeto de opções.
+exports.criarUsuarioComDados = onCall({ region: "us-central1" }, async (request) => {
+  // Na V2, 'context.auth' agora é 'request.auth'
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Você precisa estar logado para executar esta ação.");
   }
 
-  const uidChamador = context.auth.uid;
+  // Na V2, 'context.auth.uid' agora é 'request.auth.uid'
+  const uidChamador = request.auth.uid;
   const usuarioChamadorDoc = await admin.firestore().collection("usuarios").doc(uidChamador).get();
 
   if (!usuarioChamadorDoc.exists) {
-      throw new functions.https.HttpsError("permission-denied", "O seu usuário admin não possui um registro no banco de dados.");
+      throw new HttpsError("permission-denied", "O seu usuário admin não possui um registro no banco de dados.");
   }
 
   const funcoesChamador = usuarioChamadorDoc.data().funcoes || [];
   if (!funcoesChamador.includes("admin")) {
-    throw new functions.https.HttpsError("permission-denied", "Você não tem permissão de administrador para criar novos usuários.");
+    throw new HttpsError("permission-denied", "Você não tem permissão de administrador para criar novos usuários.");
   }
 
-  const { email, nome, contato, funcoes, inativo, primeiraFase, recebeDireto, profissao, fazAtendimento } = data;
+  // Na V2, os dados ('data') agora estão dentro de 'request.data'
+  const { email, nome, contato, funcoes, inativo, primeiraFase, recebeDireto, profissao, fazAtendimento } = request.data;
 
   if (!email || !nome) {
-    throw new functions.https.HttpsError("invalid-argument", "O e-mail e o nome são obrigatórios.");
+    throw new HttpsError("invalid-argument", "O e-mail e o nome são obrigatórios.");
   }
 
   try {
@@ -71,6 +76,6 @@ exports.criarUsuarioComDados = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Erro interno detalhado ao criar usuário:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });
