@@ -3,7 +3,7 @@
     <h1>Configurações Gerais</h1>
     <div class="tab">
         <button class="tablinks" data-tab="GestaoUsuarios" id="defaultOpen">Gestão de Usuários</button>
-        </div>
+    </div>
 
     <div id="GestaoUsuarios" class="tabcontent">
         <h2>Gestão de Usuários do Sistema</h2>
@@ -15,7 +15,14 @@
             <table id="usuarios-table">
                 <thead>
                     <tr>
-                        <th>Nome</th><th>E-mail (Login)</th><th>Telefone</th><th>Funções</th><th>Inativo?</th><th style="min-width: 220px;">Ações</th>
+                        <th>Nome</th>
+                        <th>E-mail (Login)</th>
+                        <th>Telefone</th>
+                        <th>Funções</th>
+                        <th>1ª Fase?</th>
+                        <th>Recebe Direto?</th>
+                        <th>Inativo?</th>
+                        <th style="min-width: 220px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -41,6 +48,9 @@
                     <label><input type="checkbox" name="funcoes" value="supervisor"> Supervisor</label>
                 </div>
                 <div class="form-group checkbox-group">
+                    <h4>Status e Condições:</h4>
+                     <label><input type="checkbox" id="user-primeira-fase"> Primeira Fase?</label>
+                     <label><input type="checkbox" id="user-recebe-direto"> Recebe Direto?</label>
                      <label><input type="checkbox" id="user-inativo"> Marcar como Inativo?</label>
                 </div>
             </form>
@@ -92,8 +102,7 @@
 
 <script>
     (function() {
-        // Todo o código agora está dentro de um escopo seguro.
-        
+        // As variáveis `db` e `firebase` já foram declaradas no index.html
         const usuariosCollection = db.collection('usuarios');
         const userModal = document.getElementById('user-modal');
         let localUsuariosList = []; 
@@ -137,6 +146,8 @@
                 document.getElementById('user-email').value = user.email || '';
                 document.getElementById('user-tel').value = user.contato || '';
                 document.getElementById('user-inativo').checked = user.inativo || false;
+                document.getElementById('user-primeira-fase').checked = user.primeiraFase || false;
+                document.getElementById('user-recebe-direto').checked = user.recebeDireto || false;
                 
                 form.querySelectorAll('input[name="funcoes"]').forEach(checkbox => {
                     checkbox.checked = user.funcoes && user.funcoes.includes(checkbox.value);
@@ -163,6 +174,8 @@
                     <td>${user.email || ''}</td>
                     <td>${user.contato || ''}</td>
                     <td>${funcoesStr}</td>
+                    <td style="text-align: center;">${user.primeiraFase ? 'Sim' : 'Não'}</td>
+                    <td style="text-align: center;">${user.recebeDireto ? 'Sim' : 'Não'}</td>
                     <td style="text-align: center;">${user.inativo ? 'Sim' : 'Não'}</td>
                     <td>
                         <button class="action-button edit-row-btn" data-id="${user.id}">Editar</button>
@@ -204,6 +217,8 @@
                 contato: document.getElementById('user-tel').value.trim(),
                 funcoes: funcoesSelecionadas,
                 inativo: document.getElementById('user-inativo').checked,
+                primeiraFase: document.getElementById('user-primeira-fase').checked,
+                recebeDireto: document.getElementById('user-recebe-direto').checked,
             };
 
             if (!userData.nome || !userData.email) {
@@ -211,21 +226,26 @@
                 return;
             }
 
+            const saveBtn = document.getElementById('modal-save-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Salvando...';
+
             try {
-                if (id) {
+                if (id) { // Editando
                     await usuariosCollection.doc(id).update(userData);
                     showToast('Usuário atualizado com sucesso!', 'success');
-                } else {
-                    const snapshot = await usuariosCollection.where('email', '==', userData.email).get();
-                    if (!snapshot.empty) throw new Error('Já existe um usuário com este e-mail.');
-                    
-                    await usuariosCollection.add(userData);
-                    showToast('Usuário adicionado com sucesso!', 'success');
-                    alert('IMPORTANTE: O usuário foi criado apenas no banco de dados. Você precisa criar a conta correspondente no Firebase Authentication para que o login funcione.');
+                } else { // Adicionando
+                    const criarUsuario = firebase.functions().httpsCallable('criarUsuarioComDados');
+                    const result = await criarUsuario(userData);
+                    showToast(result.data.message, 'success');
                 }
                 closeUserModal();
             } catch (error) {
                 showToast('Erro: ' + error.message, 'error');
+                console.error("Erro ao salvar usuário:", error);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar';
             }
         });
 
