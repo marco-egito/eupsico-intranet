@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Importador de Dados para Firestore</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #log { border: 1px solid #ccc; background-color: #333; color: #fff; margin-top: 20px; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; font-weight: bold; }
+        .log-info { color: #17a2b8; }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Importar Planilha Excel para o Firestore</h1>
+        <p>Esta ferramenta lê um arquivo .xlsx e envia os dados para a coleção selecionada no Firestore. A primeira linha da planilha deve conter os nomes dos campos.</p>
+
+        <div class="form-group">
+            <label for="collection-selector">1. Selecione a Coleção de Destino:</label>
+            <select id="collection-selector">
+                <option value="">-- Escolha uma coleção --</option>
+                <option value="usuarios">Usuários</option>
+                <option value="financeiro/fluxoCaixa/lancamentos">Lançamentos (Fluxo de Caixa)</option>
+                </select>
+        </div>
+
+        <div class="form-group">
+            <label for="file-input">2. Selecione o Arquivo Excel (.xlsx):</label>
+            <input type="file" id="file-input" accept=".xlsx, .xls">
+        </div>
+
+        <button id="import-btn">3. Iniciar Importação</button>
+
+        <h3>Log da Importação:</h3>
+        <div id="log">Aguardando arquivo...</div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        const importBtn = document.getElementById('import-btn');
+        const fileInput = document.getElementById('file-input');
+        const collectionSelect = document.getElementById('collection-selector');
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            logDiv.innerHTML += `<p class="log-${type}">[${new Date().toLocaleTimeString()}] ${message}</p>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        importBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            const collectionName = collectionSelect.value;
+
+            if (!file) {
+                log('Por favor, selecione um arquivo Excel.', 'error');
+                return;
+            }
+            if (!collectionName) {
+                log('Por favor, selecione uma coleção de destino.', 'error');
+                return;
+            }
+
+            importBtn.disabled = true;
+            importBtn.textContent = 'Processando...';
+            log(`Iniciando importação para a coleção: "${collectionName}"`);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (jsonData.length === 0) {
+                        log('A planilha parece estar vazia.', 'error');
+                        return;
+                    }
+                    
+                    log(`Planilha lida com sucesso. ${jsonData.length} linhas encontradas.`);
+                    log('Iniciando envio para o Firestore. Isso pode levar um momento...');
+
+                    // Usar um batch para enviar todos os dados de uma vez (mais eficiente)
+                    const batch = db.batch();
+                    
+                    jsonData.forEach(row => {
+                        let processedRow = { ...row };
+
+                        // Transformação de dados: Converte "admin,financeiro" em um array
+                        if (processedRow.funcoes && typeof processedRow.funcoes === 'string') {
+                            processedRow.funcoes = processedRow.funcoes.split(',').map(f => f.trim()).filter(Boolean);
+                        }
+                        
+                        // Garante que campos booleanos sejam salvos como boolean
+                        for (const key in processedRow) {
+                            if (String(processedRow[key]).toUpperCase() === 'TRUE') {
+                                processedRow[key] = true;
+                            } else if (String(processedRow[key]).toUpperCase() === 'FALSE') {
+                                processedRow[key] = false;
+                            }
+                        }
+
+                        const docRef = db.collection(collectionName).doc(); // Cria um novo documento com ID automático
+                        batch.set(docRef, processedRow);
+                    });
+                    
+                    await batch.commit();
+
+                    log(`${jsonData.length} registros importados com sucesso para "${collectionName}"!`, 'success');
+
+                } catch (error) {
+                    log(`ERRO: ${error.message}`, 'error');
+                    console.error(error);
+                } finally {
+                    importBtn.disabled = false;
+                    importBtn.textContent = '3. Iniciar Importação';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+    </script>
+</body>
+</html>
