@@ -1,6 +1,44 @@
-/* Adicionar este código ao final de css/portal.css */
+/* Adicione ou substitua estes estilos no seu arquivo css/portal.css */
 
-.google-login-button {
+/* Remove o padding antigo da tela de login para centralizar o card */
+.auth-view {
+    padding-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Estilo para o "card" branco de login */
+.login-card {
+    background-color: white;
+    padding: 40px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+}
+
+.login-logo {
+    width: 80px;  /* Ajuste o tamanho do logo conforme necessário */
+    height: 80px; /* Ajuste o tamanho do logo conforme necessário */
+    margin-bottom: 20px;
+}
+
+.login-card h2 {
+    color: #004a7f;
+    margin-top: 0;
+}
+
+.login-card p {
+    color: #555;
+    margin-bottom: 25px;
+}
+
+/* Botão de Login Estilo Google (com seletor mais específico) */
+.login-card .google-login-button {
     /* Estrutura e Alinhamento */
     display: inline-flex;
     align-items: center;
@@ -20,21 +58,20 @@
     
     /* Tamanho e Espaçamento */
     height: 40px;
-    padding: 0 12px;
+    padding: 0 24px 0 12px;
     
     /* Comportamento */
     cursor: pointer;
     transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.google-login-button:hover {
+.login-card .google-login-button:hover {
     background-color: #f8f9fa;
     border-color: #c6c9ce;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Ícone do Google (SVG embutido para não precisar de arquivo de imagem) */
-.google-login-button::before {
+.login-card .google-login-button::before {
     content: '';
     display: inline-block;
     width: 18px;
