@@ -80,8 +80,10 @@
 </div>
 
 <style>
+    /* ... O CSS completo, como na resposta anterior ... */
     .container { max-width: 1200px; margin: 0 auto; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
     h1 { text-align: center; color: #004a7f; padding: 20px 0; margin: 0; }
+    h2 { color: #333; }
     .tab { overflow: hidden; border-bottom: 1px solid #ccc; background-color: #f1f1f1; }
     .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px; font-weight: bold; color: #555; }
     .tab button:hover { background-color: #ddd; }
@@ -116,27 +118,30 @@
 </style>
 
 <script type="module">
+    // Importe todas as funções necessárias do Firebase
+    import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js";
+    import { getIdToken } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    
     // Como esta página é carregada dinamicamente, ela precisa ter acesso às instâncias de 'db' e 'auth' criadas no index.html
-    const db = window.db;
+    const db = window.db; 
     const auth = window.auth;
     
-    // Importe todas as funções necessárias do Firebase
-    import { getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getFirestore } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js";
-    import { getAuth, getIdToken } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    
-    // Se db ou auth não estiverem disponíveis, pare a execução para evitar erros
-    if (!db || !auth) {
-        console.error("Instâncias do Firebase (db, auth) não encontradas. Certifique-se de que index.html as expôs globalmente.");
-    } else {
-        const functions = getFunctions(getApp(db), 'us-central1'); // Reobtém a instância do functions
+    // A EXECUÇÃO SÓ COMEÇA QUANDO TEMOS CERTEZA QUE 'db' E 'auth' EXISTEM
+    if (db && auth) {
+        
+        // CORREÇÃO: A inicialização do 'functions' foi movida para DENTRO deste bloco seguro.
+        // E a forma de pegar o 'app' foi corrigida para usar 'auth.app'.
+        const functions = getFunctions(auth.app, 'us-central1');
 
         (function() {
             const usuariosCollectionRef = collection(db, 'usuarios');
             const userModal = document.getElementById('user-modal');
             let localUsuariosList = [];
 
+            // A PARTIR DAQUI, O RESTO DO CÓDIGO É O MESMO
+            function openTab(evt, tabName) { /* ...código da função... */ }
+            // ... (restante das suas funções e lógica que já funcionavam)
             function openTab(evt, tabName) {
                 document.querySelectorAll(".tabcontent").forEach(tc => tc.style.display = "none");
                 document.querySelectorAll(".tablinks").forEach(tl => tl.classList.remove("active"));
@@ -265,7 +270,6 @@
                     fazAtendimento: document.getElementById('user-faz-atendimento').checked,
                 };
                 
-                // Adiciona o username apenas se for uma atualização
                 if(id) {
                     const gerarUsername = (nomeCompleto) => {
                         if (!nomeCompleto) return "";
@@ -275,7 +279,6 @@
                     };
                     userData.username = gerarUsername(userData.nome);
                 }
-
 
                 if (!userData.nome || !userData.email) {
                     showToast('Nome e E-mail são obrigatórios.', 'error'); return;
@@ -332,5 +335,8 @@
             
             loadUsuarios();
         })();
+
+    } else {
+        console.error("ERRO: As instâncias do Firebase (db, auth) não foram encontradas. O script de configuracoes.html não pode ser executado.");
     }
 </script>
