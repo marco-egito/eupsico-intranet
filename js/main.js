@@ -7,7 +7,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-
 window.db = db;
 window.auth = auth;
 
-const authView = document.getElementById('#auth-view');
+const authView = document.getElementById('auth-view');
 const appView = document.getElementById('app-view');
 const loginButton = document.getElementById('login-button');
 const logoutButton = document.getElementById('logout-button');
