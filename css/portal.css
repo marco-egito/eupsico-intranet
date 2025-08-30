@@ -2,7 +2,7 @@
 
 /* --- Estilos da Tela de Login --- */
 
-.auth-view {
+#auth-view {
     display: flex;
     align-items: center;      /* Alinha o card verticalmente ao centro */
     justify-content: center;  /* Alinha o card horizontalmente ao centro */
@@ -11,7 +11,7 @@
     box-sizing: border-box;   /* Garante que o padding não aumente o tamanho total */
 }
 
-.login-card {
+#login-card {
     background-color: white;
     padding: 40px 30px;
     border-radius: 12px;
