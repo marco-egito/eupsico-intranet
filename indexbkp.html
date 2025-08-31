@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intranet EuPsico</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/portal.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Google+Sans:wght@500">
+</head>
+<body>
+
+    <div id="loading-view" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <p>Carregando...</p>
+    </div>
+
+    <div id="auth-view" class="hidden">
+        <div class="login-card">
+            <img src="img/Logo.jpg" alt="Logo EuPsico" class="login-logo">
+            <h2>Intranet EuPsico</h2>
+            <p id="auth-message">Por favor, faça o login para continuar.</p>
+            <button id="login-button" class="login-button">Login com Google</button>
+        </div>
+    </div>
+
+    <div id="app-view" class="hidden">
+        <header class="top-bar">
+            <h1>Intranet EuPsico</h1>
+            <div>
+                <span id="user-info"></span>
+                <button id="logout-button">Sair</button>
+            </div>
+        </header>
+        <main id="app-container" class="content"></main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <script src="js/firebase-keys.js"></script> 
+    
+    <script type="module" src="js/main.js"></script>
+    
+</body>
+</html>

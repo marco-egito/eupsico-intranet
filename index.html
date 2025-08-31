@@ -2,45 +2,135 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intranet EuPsico</title>
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/portal.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Google+Sans:wght@500">
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9; text-align: center; }
+        .container { max-width: 800px; width: 100%; }
+        .dashboard-container, .loading-container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #logout-btn { background-color: #6c757d; font-size: 0.8em; padding: 8px 15px; border: none; border-radius: 5px; color: white; cursor: pointer; }
+        .header { display: flex; justify-content: space-between; align-items: center; text-align: left; margin-bottom: 20px; }
+        .header img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
+        .nav-links a { display: block; background-color: #e9ecef; margin: 10px 0; padding: 15px; text-decoration: none; color: #333; font-weight: bold; border-radius: 5px; transition: background-color 0.2s ease; }
+        .nav-links a:hover { background-color: #ced4da; }
+    </style>
 </head>
 <body>
-
-    <div id="loading-view" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-        <p>Carregando...</p>
-    </div>
-
-    <div id="auth-view" class="hidden">
-        <div class="login-card">
-            <img src="img/Logo.jpg" alt="Logo EuPsico" class="login-logo">
+    <div class="container">
+        <div id="loading-section" class="loading-container">
             <h2>Intranet EuPsico</h2>
-            <p id="auth-message">Por favor, faça o login para continuar.</p>
-            <button id="login-button" class="login-button">Login com Google</button>
+            <p>Verificando autenticação, por favor aguarde...</p>
+        </div>
+
+        <div id="dashboard-section" class="dashboard-container" style="display: none;">
+            <div class="header">
+                <div style="display: flex; align-items: center;">
+                    <img id="user-photo" src="" alt="User">
+                    <span id="user-name"></span>
+                </div>
+                <button id="logout-btn">Sair</button>
+            </div>
+            <h2>Painel de Acesso</h2>
+            <p>Selecione a área que deseja acessar:</p>
+            <div id="nav-links" class="nav-links"></div>
         </div>
     </div>
 
-    <div id="app-view" class="hidden">
-        <header class="top-bar">
-            <h1>Intranet EuPsico</h1>
-            <div>
-                <span id="user-info"></span>
-                <button id="logout-button">Sair</button>
-            </div>
-        </header>
-        <main id="app-container" class="content"></main>
-    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_REAL", // GARANTA QUE SUA API KEY REAL ESTÁ AQUI
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    <script src="js/firebase-keys.js"></script> 
-    
-    <script type="module" src="js/main.js"></script>
-    
+        const loadingSection = document.getElementById('loading-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userPhoto = document.getElementById('user-photo');
+        const userName = document.getElementById('user-name');
+        const navLinks = document.getElementById('nav-links');
+
+        const linksPorFuncao = {
+            'admin': { titulo: '⚙️ Acesso Administrativo', url: '/administrativo' },
+            'financeiro': { titulo: '💰 Acesso Financeiro', url: '/financeiro' },
+            'rh': { titulo: '👥 Recursos Humanos', url: '/rh' },
+            'supervisao': { titulo: '👓 Supervisão', url: '/supervisao' },
+            'geral': { titulo: '🌐 Intranet Geral', url: '/intranet-geral' }
+        };
+        const URL_BASE_SITES = 'https://sites.google.com/eupsico.org.br/interno';
+
+        let authCompleted = false; // Flag para evitar loops
+
+        // --- LÓGICA PRINCIPAL ---
+        auth.onAuthStateChanged(async (user) => {
+            authCompleted = true; // Marca que a verificação inicial terminou
+            if (user) {
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().funcoes) {
+                    renderDashboard(user, userDoc.data().funcoes);
+                } else {
+                    document.getElementById('loading-section').innerHTML = '<h2>Acesso Negado</h2><p>Este usuário não possui permissões no banco de dados.</p>';
+                    auth.signOut();
+                }
+            } else {
+                // Usuário não está logado, inicia o fluxo de login
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithRedirect(provider);
+            }
+        });
+
+        // Este código processa o login QUANDO o usuário volta do Google
+        auth.getRedirectResult()
+            .then((result) => {
+                if (!result.user && !authCompleted) {
+                    // Se não houve resultado e a verificação inicial ainda não rodou,
+                    // pode ser que o usuário precise ser logado.
+                    // A lógica no onAuthStateChanged vai cuidar disso.
+                }
+            })
+            .catch((error) => {
+                console.error("Erro no getRedirectResult:", error);
+                document.getElementById('loading-section').innerHTML = `<h2>Erro de Autenticação</h2><p>${error.message}</p>`;
+            });
+
+
+        function renderDashboard(user, funcoes) {
+            userName.textContent = user.displayName;
+            userPhoto.src = user.photoURL;
+            navLinks.innerHTML = ''; 
+
+            const linksParaMostrar = new Set();
+            if (funcoes.includes('admin')) {
+                Object.values(linksPorFuncao).forEach(link => linksParaMostrar.add(link));
+            } else {
+                funcoes.forEach(funcao => {
+                    if (linksPorFuncao[funcao]) linksParaMostrar.add(linksPorFuncao[funcao]);
+                });
+            }
+
+            linksParaMostrar.forEach(link => {
+                const a = document.createElement('a');
+                a.href = URL_BASE_SITES + link.url;
+                a.textContent = link.titulo;
+                a.target = '_top'; 
+                navLinks.appendChild(a);
+            });
+            
+            loadingSection.style.display = 'none';
+            dashboardSection.style.display = 'block';
+        }
+        
+        logoutBtn.addEventListener('click', () => auth.signOut());
+    </script>
 </body>
 </html>
