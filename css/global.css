@@ -12,5 +12,6 @@ body {
 }
 
 .hidden { 
-    display: none; 
+    /* ALTERAÇÃO: Adicionado !important para garantir que esta regra sempre vença conflitos de especificidade. */
+    display: none !important; 
 }
