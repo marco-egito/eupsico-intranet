@@ -1,12 +1,13 @@
-// js/main.js (Versão Limpa e Final)
+// js/main.js
 
 import { auth, db } from './firebase-config.js';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-window.db = db;
-window.auth = auth;
+// ALTERAÇÃO: Variáveis globais (window.db, window.auth) removidas por serem má prática.
 
+// ALTERAÇÃO: Adicionada a referência para a nova view de carregamento.
+const loadingView = document.getElementById('loading-view');
 const authView = document.getElementById('auth-view');
 const appView = document.getElementById('app-view');
 const loginButton = document.getElementById('login-button');
@@ -81,6 +82,9 @@ function renderModuleSelection() {
 
 // --- CONTROLE PRINCIPAL DE AUTENTICAÇÃO E EVENTOS ---
 onAuthStateChanged(auth, async (user) => {
+    // ALTERAÇÃO: Esconde a view de carregamento assim que o Firebase responde.
+    loadingView.classList.add('hidden');
+
     if (user) {
         userInfo.textContent = user.email;
         authView.classList.add('hidden');
@@ -101,7 +105,7 @@ onAuthStateChanged(auth, async (user) => {
 loginButton.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    signInWithRedirect(auth, provider);
+    signInWithRedirect(auth, provider); // Mantido o método de redirecionamento
 });
 
 logoutButton.addEventListener('click', () => signOut(auth));
