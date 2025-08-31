@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Ignorar o arquivo que contém as chaves secretas do Firebase
+js/firebase-keys.js
