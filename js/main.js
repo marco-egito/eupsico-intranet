@@ -101,7 +101,7 @@ onAuthStateChanged(auth, async (user) => {
 loginButton.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    signInWithPopup(auth, provider);
+    signInWithRedirect(auth, provider);
 });
 
 logoutButton.addEventListener('click', () => signOut(auth));
