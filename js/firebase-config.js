@@ -6,13 +6,13 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.23.0/firebase
 
 // Objeto de configuração do seu projeto Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-  authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-  databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-  projectId: "eupsico-agendamentos-d2048",
-  storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-  messagingSenderId: "1041518416343",
-  appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_DATABASE_URL,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID
 };
 
 // Inicializa o app
