@@ -3,53 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Login Simples</title>
+    <title>Página de Login com Firebase</title>
 </head>
 <body>
 
     <div id="tela-de-login">
         <h2>Bem-vindo!</h2>
         <p>Por favor, faça o login para continuar.</p>
-        <button id="botao-de-login">Entrar</button>
+        <button id="botao-de-login">Entrar com Google</button>
     </div>
 
     <div id="tela-de-boas-vindas" style="display: none;">
-        <h1>Hello World!</h1>
+        <h1 id="mensagem-ola">Hello World!</h1>
         <p>Você está logado.</p>
         <button id="botao-de-sair">Sair</button>
     </div>
 
 
-    <script>
-        // 1. Pegamos os elementos da página que vamos manipular
+    <script type="module">
+        // Importa as funções que vamos precisar do SDK do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        // 2. Cole aqui as suas credenciais do Firebase
+        // (Encontre em Configurações do Projeto > Geral > Seus apps > Configuração do SDK)
+        const firebaseConfig = {
+              apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+                authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+                databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+                projectId: "eupsico-agendamentos-d2048",
+                storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+                messagingSenderId: "1041518416343",
+                appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+        };
+
+        // 3. Inicializamos o Firebase e o serviço de Autenticação
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        // 4. Pegamos os elementos da página que vamos manipular
         const telaDeLogin = document.getElementById('tela-de-login');
         const telaDeBoasVindas = document.getElementById('tela-de-boas-vindas');
+        const mensagemOla = document.getElementById('mensagem-ola');
         
         const botaoDeLogin = document.getElementById('botao-de-login');
         const botaoDeSair = document.getElementById('botao-de-sair');
+        
+        // 5. O CORAÇÃO DA NOSSA LÓGICA: onAuthStateChanged
+        // Esta função "ouve" o estado do login em tempo real.
+        // Ela é chamada sempre que um usuário faz login ou logout.
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Se 'user' existe, significa que o usuário está LOGADO.
+                console.log("Usuário logado:", user.displayName);
+                
+                // Mostra a tela de boas-vindas e esconde a de login
+                telaDeLogin.style.display = 'none';
+                telaDeBoasVindas.style.display = 'block';
 
-        // 2. Adicionamos um "ouvinte" para o clique no botão de login
+                // Personaliza a mensagem de "Hello World!"
+                mensagemOla.textContent = `Hello, ${user.displayName}!`;
+
+            } else {
+                // Se 'user' for nulo, o usuário está DESLOGADO.
+                console.log("Nenhum usuário logado.");
+
+                // Mostra a tela de login e esconde a de boas-vindas
+                telaDeLogin.style.display = 'block';
+                telaDeBoasVindas.style.display = 'none';
+
+                // Volta a mensagem para o padrão
+                mensagemOla.textContent = 'Hello World!';
+            }
+        });
+        
+        // 6. Lógica para o botão de LOGIN
         botaoDeLogin.addEventListener('click', () => {
-            console.log("Botão de Entrar clicado!");
-
-            // Esconde a tela de login
-            telaDeLogin.style.display = 'none';
-
-            // Mostra a tela de boas-vindas
-            telaDeBoasVindas.style.display = 'block';
+            const provider = new GoogleAuthProvider();
+            // signInWithRedirect redireciona a página para o Google
+            signInWithRedirect(auth, provider);
         });
 
-        // 3. Adicionamos um "ouvinte" para o clique no botão de sair
+        // 7. Lógica para o botão de SAIR
         botaoDeSair.addEventListener('click', () => {
-            console.log("Botão de Sair clicado!");
-
-            // Esconde a tela de boas-vindas
-            telaDeBoasVindas.style.display = 'none';
-
-            // Mostra a tela de login novamente
-            telaDeLogin.style.display = 'block';
+            signOut(auth);
         });
-    </script>
 
+    </script>
+    
 </body>
 </html>
