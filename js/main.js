@@ -104,7 +104,7 @@ onAuthStateChanged(auth, async (user) => {
 
 loginButton.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+    // provider.setCustomParameters({ prompt: 'select_account' });
     signInWithRedirect(auth, provider); // Mantido o método de redirecionamento
 });
 
