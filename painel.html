@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Financeiro - EuPsico</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        /* ESTILOS GERAIS */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; color: #333; }
+        .main-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background-color: #004a7f; color: white; padding: 15px; flex-shrink: 0; }
+        .sidebar h2 { text-align: center; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li button { width: 100%; background: none; border: none; color: white; padding: 12px; text-align: left; cursor: pointer; font-size: 1em; border-radius: 5px; transition: background-color 0.2s; }
+        .sidebar ul li button:hover, .sidebar ul li button.active { background-color: #005a87; }
+        .content { flex-grow: 1; padding: 20px; }
+        .hidden { display: none; }
+        .auth-view { text-align: center; padding-top: 50px; }
+        .auth-view button { padding: 10px 20px; font-size: 1em; cursor: pointer; background-color: #007bff; color:white; border:none; border-radius: 5px; }
+
+        /* ESTILOS DAS VIEWS (PÁGINAS) */
+        .view { display: none; /* Todas as "páginas" começam escondidas */ }
+        .view.active { display: block; /* A "página" ativa é mostrada */ }
+        .container { max-width: 95%; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #004a7f; }
+
+        /* ESTILOS ESPECÍFICOS (Combinei o CSS de todas as suas páginas aqui) */
+        .tab { overflow: hidden; border-bottom: 1px solid #ccc; background-color: #f1f1f1; }
+        .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px; font-weight: bold; color: #555; }
+        .tab button:hover { background-color: #ddd; }
+        .tab button.active { background-color: #004a7f; color: white; }
+        .tabcontent { display: none; padding: 20px; border-top: none; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input[type="text"], input[type="email"], input[type="number"], textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1em; }
+        input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; }
+        .checkbox-group label { display: inline-flex; align-items: center; margin-right: 15px; font-weight: normal; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+        thead th { background-color: #e9ecef; }
+        .action-button { border: none; padding: 8px 12px; font-size: 0.9em; font-weight: bold; border-radius: 5px; cursor: pointer; color: white; margin-right: 5px; }
+        .button-bar { margin-bottom: 20px; overflow: hidden; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; }
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; }
+        .toast { background-color: #333; color: white; padding: 15px 20px; border-radius: 5px; margin-top: 10px; opacity: 0; transition: all 0.4s ease; }
+        .toast.show { opacity: 1; }
+        .toast.toast-success { background-color: #28a745; }
+        .toast.toast-error { background-color: #dc3545; }
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; border-left: 5px solid; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div id="auth-view">
+        <div class="container" style="max-width: 400px; margin-top: 50px;">
+            <h2>Painel Financeiro EuPsico</h2>
+            <p id="auth-message">Verificando autenticação...</p>
+            <button id="login-button" class="hidden">Login com Google</button>
+        </div>
+    </div>
+
+    <div id="app-view" class="main-container hidden">
+        <nav class="sidebar">
+            <h2>Financeiro</h2>
+            <ul>
+                <li><button class="nav-button" data-view="view-dashboard">Dashboard</button></li>
+                <li><button class="nav-button" data-view="view-configuracoes">Configurações</button></li>
+                <li><button class="nav-button" data-view="view-importador">Importador</button></li>
+            </ul>
+            <button id="logout-button" style="width: 100%; margin-top: 20px; background-color:#dc3545; border:none; color:white; padding:10px; cursor:pointer; border-radius: 5px;">Sair</button>
+        </nav>
+        <main class="content">
+            <div id="view-dashboard" class="view">
+                <div class="container">
+                    <h1>Dashboard Financeiro</h1>
+                    <p>Bem-vindo ao painel. Selecione uma opção no menu à esquerda.</p>
+                    </div>
+            </div>
+
+            <div id="view-configuracoes" class="view">
+                <div class="container">
+                    <h1>Configurações Gerais</h1>
+                    <p>Aqui você poderá gerenciar os usuários do sistema.</p>
+                    <div id="configuracoes-content"></div>
+                </div>
+            </div>
+
+            <div id="view-importador" class="view">
+                <div class="container">
+                    <h1>Importador de Usuários</h1>
+                    <p>Aqui você poderá subir uma planilha para popular o banco de dados.</p>
+                    <div id="importador-content"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+            authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+            databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+            projectId: "eupsico-agendamentos-d2048",
+            storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+            messagingSenderId: "1041518416343",
+            appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- CONTROLE DE AUTENTICAÇÃO E NAVEGAÇÃO ---
+        const authView = document.getElementById('auth-view');
+        const appView = document.getElementById('app-view');
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const navButtons = document.querySelectorAll('.nav-button');
+        
+        const initializedViews = new Set();
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+
+            // Inicializa o JS da view apenas uma vez
+            if (!initializedViews.has(viewId)) {
+                if (viewId === 'view-configuracoes') {
+                    initConfiguracoes();
+                } else if (viewId === 'view-importador') {
+                    initImportador();
+                } // Adicione outras inicializações aqui
+                initializedViews.add(viewId);
+            }
+        }
+        
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                const funcoes = userDoc.exists ? userDoc.data().funcoes || [] : [];
+
+                if (funcoes.includes('admin') || funcoes.includes('financeiro')) {
+                    authView.classList.add('hidden');
+                    appView.classList.remove('hidden');
+                    // Mostra a primeira view por padrão
+                    const firstViewId = navButtons[0].dataset.view;
+                    navButtons[0].classList.add('active');
+                    showView(firstViewId);
+                } else {
+                    document.getElementById('auth-message').innerText = 'Acesso Negado. Você não tem permissão.';
+                    auth.signOut();
+                }
+            } else {
+                authView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                document.getElementById('auth-message').innerText = 'Por favor, faça o login para continuar.';
+                loginButton.classList.remove('hidden');
+            }
+        });
+
+        loginButton.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+        });
+
+        logoutButton.addEventListener('click', () => auth.signOut());
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                showView(e.target.dataset.view);
+            });
+        });
+
+        // --- LÓGICA DAS VIEWS (PÁGINAS) ---
+
+        // Função de Toast reutilizável
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // ---- LÓGICA DA VIEW DE CONFIGURAÇÕES ----
+        function initConfiguracoes() {
+            const container = document.getElementById('configuracoes-content');
+            // Cole aqui o HTML da sua view de configurações
+            container.innerHTML = `
+                <p>Gerencie os usuários do sistema. <strong>Atenção:</strong> a criação aqui salva apenas no banco de dados. A conta de login deve ser criada no Console do Firebase.</p>
+                <button class="action-button" id="add-user-btn-config">Adicionar Usuário</button>
+                <div id="users-table-container">Carregando usuários...</div>
+            `;
+            
+            const usuariosCollection = db.collection('usuarios');
+
+            function renderUsersTable(users) {
+                let tableHTML = '<table class="config-table"><thead><tr><th>Nome</th><th>Email</th><th>Funções</th><th>Ações</th></tr></thead><tbody>';
+                users.forEach(user => {
+                    tableHTML += `<tr>
+                        <td>${user.nome}</td>
+                        <td>${user.email}</td>
+                        <td>${(user.funcoes || []).join(', ')}</td>
+                        <td><button data-id="${user.id}">Editar</button></td>
+                    </tr>`;
+                });
+                tableHTML += '</tbody></table>';
+                document.getElementById('users-table-container').innerHTML = tableHTML;
+            }
+
+            usuariosCollection.orderBy("nome").onSnapshot(snapshot => {
+                const userList = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                renderUsersTable(userList);
+            });
+
+            // Adicione a lógica do modal e de salvar/editar aqui, se necessário.
+        }
+
+        // ---- LÓGICA DA VIEW DO IMPORTADOR ----
+        function initImportador() {
+            const container = document.getElementById('importador-content');
+            // Cole aqui o HTML da sua view do importador
+            container.innerHTML = `
+                <p>Importe usuários em lote. <strong>Atenção:</strong> a importação salvará os dados apenas no banco de dados.</p>
+                <div class="form-group">
+                    <label>Selecione o Arquivo Excel (.xlsx):</label>
+                    <input type="file" id="file-input-import" accept=".xlsx, .xls">
+                </div>
+                <button class="action-button" id="import-btn-import">Iniciar Importação</button>
+                <div id="log-import" style="background-color:#eee; padding: 10px; margin-top: 10px; height: 150px; overflow-y: scroll;"></div>
+            `;
+
+            document.getElementById('import-btn-import').addEventListener('click', () => {
+                const logDiv = document.getElementById('log-import');
+                logDiv.innerHTML = 'Iniciando...<br>';
+                // A lógica completa de leitura do Excel e escrita no Firestore (sem Cloud Functions) iria aqui.
+                showToast('Funcionalidade de importação a ser implementada.', 'info');
+            });
+        }
+    </script>
+</body>
+</html>
