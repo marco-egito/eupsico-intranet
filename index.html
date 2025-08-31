@@ -2,94 +2,168 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Login com Firebase</title>
+    <title>Intranet EuPsico</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 20px; text-align: center; }
+        .app-container { max-width: 800px; margin: auto; }
+        .view { display: none; }
+        .visible { display: block; }
+        .content-box { background-color: white; padding: 25px 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 20px; text-align: left; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #ddd; }
+        #login-button { background-color: #004a7f; color: white; border: none; font-size: 1.1em; }
+        #logout-button { background-color: #6c757d; color: white; border: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+        .user-info { display: flex; align-items: center; }
+        .user-info img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
+        .user-info span { font-weight: bold; }
+        #nav-links a, #nav-links button { display: block; width: 100%; margin: 10px 0; text-align: left; background-color: #f1f1f1; border: 1px solid #ddd; padding: 15px; text-decoration: none; color: #333; font-size: 1em; }
+        #nav-links a:hover, #nav-links button:hover { background-color: #e0e0e0; }
+    </style>
 </head>
 <body>
+    <div class="app-container">
 
-    <div id="tela-de-login">
-        <h2>Bem-vindo!</h2>
-        <p>Por favor, faça o login para continuar.</p>
-        <button id="botao-de-login">Entrar com Google</button>
+        <div id="login-view" class="view" style="text-align: center;">
+             <div class="content-box">
+                <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
+                <h2>Intranet EuPsico</h2>
+                <p>Por favor, faça login para continuar.</p>
+                <button id="login-button">Login com Google</button>
+            </div>
+        </div>
+
+        <div id="loading-view" class="view">
+            <p>Verificando autenticação...</p>
+        </div>
+        
+        <div id="dashboard-view" class="view content-box">
+            <div class="header">
+                <div class="user-info">
+                    <img id="user-photo" src="" alt="Foto">
+                    <span id="user-name"></span>
+                </div>
+                <button id="logout-button">Sair</button>
+            </div>
+            <h2>Painel de Acesso</h2>
+            <p>Selecione a área que deseja acessar:</p>
+            <div id="nav-links">
+                </div>
+        </div>
+
     </div>
 
-    <div id="tela-de-boas-vindas" style="display: none;">
-        <h1 id="mensagem-ola">Hello World!</h1>
-        <p>Você está logado.</p>
-        <button id="botao-de-sair">Sair</button>
-    </div>
-
-
-    <script type="module">
-        // Importa as funções que vamos precisar do SDK do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-        // 2. Cole aqui as suas credenciais do Firebase
-        // (Encontre em Configurações do Projeto > Geral > Seus apps > Configuração do SDK)
-        const firebaseConfig = {
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const firebaseConfig = {
               apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
-                authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
-                databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
-                projectId: "eupsico-agendamentos-d2048",
-                storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
-                messagingSenderId: "1041518416343",
-                appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
-        };
+              authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+              databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+              projectId: "eupsico-agendamentos-d2048",
+              storageBucket: "eupsico-agendamentos-d2048.appspot.com",
+              messagingSenderId: "1041518416343",
+              appId: "1:1041518416343:web:3b972c212c52a59ad7bb92"
+            };
+            
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-        // 3. Inicializamos o Firebase e o serviço de Autenticação
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        
-        // 4. Pegamos os elementos da página que vamos manipular
-        const telaDeLogin = document.getElementById('tela-de-login');
-        const telaDeBoasVindas = document.getElementById('tela-de-boas-vindas');
-        const mensagemOla = document.getElementById('mensagem-ola');
-        
-        const botaoDeLogin = document.getElementById('botao-de-login');
-        const botaoDeSair = document.getElementById('botao-de-sair');
-        
-        // 5. O CORAÇÃO DA NOSSA LÓGICA: onAuthStateChanged
-        // Esta função "ouve" o estado do login em tempo real.
-        // Ela é chamada sempre que um usuário faz login ou logout.
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Se 'user' existe, significa que o usuário está LOGADO.
-                console.log("Usuário logado:", user.displayName);
-                
-                // Mostra a tela de boas-vindas e esconde a de login
-                telaDeLogin.style.display = 'none';
-                telaDeBoasVindas.style.display = 'block';
+            const loginButton = document.getElementById('login-button');
+            const logoutButton = document.getElementById('logout-button');
+            const userPhoto = document.getElementById('user-photo');
+            const userName = document.getElementById('user-name');
+            const navLinks = document.getElementById('nav-links');
 
-                // Personaliza a mensagem de "Hello World!"
-                mensagemOla.textContent = `Hello, ${user.displayName}!`;
-
-            } else {
-                // Se 'user' for nulo, o usuário está DESLOGADO.
-                console.log("Nenhum usuário logado.");
-
-                // Mostra a tela de login e esconde a de boas-vindas
-                telaDeLogin.style.display = 'block';
-                telaDeBoasVindas.style.display = 'none';
-
-                // Volta a mensagem para o padrão
-                mensagemOla.textContent = 'Hello World!';
+            function showView(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
+                document.getElementById(viewId).classList.add('visible');
             }
-        });
-        
-        // 6. Lógica para o botão de LOGIN
-        botaoDeLogin.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            // signInWithRedirect redireciona a página para o Google
-            signInWithRedirect(auth, provider);
-        });
 
-        // 7. Lógica para o botão de SAIR
-        botaoDeSair.addEventListener('click', () => {
-            signOut(auth);
-        });
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().funcoes && userDoc.data().funcoes.length > 0) {
+                        const funcoes = userDoc.data().funcoes;
+                        renderDashboard(user, funcoes);
+                        showView('dashboard-view');
+                    } else {
+                        document.body.innerHTML = `<div class="content-box" style="max-width: 800px; margin: auto; text-align: center;"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões definidas. Contate o administrador.</p><button onclick="firebase.auth().signOut()">Sair</button></div>`;
+                    }
+                } else {
+                    showView('login-view');
+                }
+            });
 
+            function renderDashboard(user, funcoes) {
+                userPhoto.src = user.photoURL || '';
+                userName.textContent = user.displayName || 'Usuário';
+                navLinks.innerHTML = '';
+
+                // Mapeamento de todas as áreas disponíveis
+                const areas = {
+                    intranet: { titulo: '🌐 Intranet Geral', url: 'URL_DA_INTRANET_GERAL_AQUI', roles: ['admin', 'todos'] }, // 'todos' é uma role imaginária para acesso geral
+                    administrativo: { titulo: '📁 Administrativo', url: '#', roles: ['admin', 'administrativo'] },
+                    captacao: { titulo: '🎯 Captação', url: '#', roles: ['admin', 'captacao'] },
+                    financeiro: { titulo: '💰 Financeiro', url: './painel.html', roles: ['admin', 'financeiro'] },
+                    grupos: { titulo: '👨‍👩‍👧‍👦 Grupos', url: '#', roles: ['admin', 'grupos'] },
+                    marketing: { titulo: '📈 Marketing', url: '#', roles: ['admin', 'marketing'] },
+                    plantao: { titulo: '📞 Plantão', url: '#', roles: ['admin', 'plantao'] },
+                    rh: { titulo: '👥 Recursos Humanos', url: '#', roles: ['admin', 'rh'] },
+                    servico_social: { titulo: '🤝 Serviço Social', url: '#', roles: ['admin', 'servico_social'] },
+                    supervisao: { titulo: '👨‍🏫 Supervisão', url: '#', roles: ['admin', 'supervisao'] },
+                };
+
+                let botoesParaMostrar = [];
+
+                // Adiciona os botões que o usuário tem permissão para ver
+                for (const key in areas) {
+                    const area = areas[key];
+                    // O usuário vê o link se for admin ou se tiver alguma das roles necessárias para aquela área
+                    const temPermissao = funcoes.includes('admin') || area.roles.some(role => funcoes.includes(role));
+                    
+                    if (temPermissao) {
+                        botoesParaMostrar.push(area);
+                    }
+                }
+
+                // Ordena os botões em ordem alfabética pelo título, exceto a Intranet Geral que fica primeiro
+                botoesParaMostrar.sort((a, b) => {
+                    if (a.titulo.includes('Intranet Geral')) return -1;
+                    if (b.titulo.includes('Intranet Geral')) return 1;
+                    return a.titulo.localeCompare(b.titulo);
+                });
+                
+                // Cria os elementos <a> e os adiciona na tela
+                botoesParaMostrar.forEach(config => {
+                    const link = document.createElement('a');
+                    link.textContent = config.titulo;
+                    link.href = config.url;
+                    // Abre em nova aba se não for um link interno simples
+                    if (config.url.startsWith('http') || config.url.endsWith('.html')) {
+                        link.target = '_blank';
+                    }
+                    navLinks.appendChild(link);
+                });
+            }
+
+            loginButton.addEventListener('click', () => {
+                showView('loading-view');
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => {
+                    console.error("Erro durante o login com popup:", error);
+                    showView('login-view');
+                });
+            });
+
+            logoutButton.addEventListener('click', () => {
+                auth.signOut();
+            });
+
+            showView('loading-view');
+        });
     </script>
-    
 </body>
 </html>
