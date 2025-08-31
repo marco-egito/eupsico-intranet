@@ -1,78 +1,149 @@
-/* css/portal.css */
+// Importe as funções necessárias do SDK do Firebase que você está usando
+// Lembre-se de configurar seu arquivo firebase-config.js com suas credenciais
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-/* --- Estilos da Tela de Login --- */
+// --- CONFIGURAÇÃO DO FIREBASE ---
+// Cole aqui a configuração do seu projeto Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCLeWW39nqxsdv1YD-CNa9RSTv05lGHJxM",
+  authDomain: "eupsico-agendamentos-d2048.firebaseapp.com",
+  databaseURL: "https://eupsico-agendamentos-d2048-default-rtdb.firebaseio.com",
+  projectId: "eupsico-agendamentos-d2048",
+  storageBucket: "eupsico-agendamentos-d2048.firebasestorage.app",
+  messagingSenderId: "1041518416343",
+  appId: "1:1041518416343:web:3a0abc73404ccd51d7bb92"
+};
 
-#auth-view {
-    display: flex;
-    align-items: center;      /* Alinha o card verticalmente ao centro */
-    justify-content: center;  /* Alinha o card horizontalmente ao centro */
-    min-height: 100vh;        /* Garante que a área ocupe a altura total da tela */
-    padding: 20px;            /* Evita que o card cole nas bordas em telas pequenas */
-    box-sizing: border-box;   /* Garante que o padding não aumente o tamanho total */
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Para facilitar o acesso no console durante o desenvolvimento (opcional)
+window.auth = auth;
+window.db = db;
+
+// --- SELETORES DE ELEMENTOS DOM ---
+// Buscando todos os elementos pelo ID, sem '#'
+const authView = document.getElementById('auth-view');
+const appView = document.getElementById('app-view');
+const loginButton = document.getElementById('login-button');
+const logoutButton = document.getElementById('logout-button');
+const appContainer = document.getElementById('app-container');
+const userInfo = document.getElementById('user-info');
+const authMessage = document.getElementById('auth-message');
+
+
+// --- LÓGICA DE LOGOUT AUTOMÁTICO POR INATIVIDADE ---
+let inactivityTimer;
+
+function resetInactivityTimer() {
+    // Limpa o timer anterior
+    clearTimeout(inactivityTimer);
+    // Define um novo timer de 30 minutos (1800000 milissegundos)
+    inactivityTimer = setTimeout(() => {
+        alert("Você foi desconectado por inatividade.");
+        signOut(auth);
+    }, 1800000); // 30 minutos
 }
 
-.login-card {
-    background-color: white;
-    padding: 40px 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    text-align: center;
-    width: 100%;              /* Em telas pequenas, ocupa 100% do espaço... */
-    max-width: 400px;         /* ...mas em telas grandes, não passa de 400px. */
+function stopInactivityTimer() {
+    clearTimeout(inactivityTimer);
 }
 
-.login-logo {
-    max-width: 150px;
-    height: auto;
-    margin-bottom: 24px;
+// Eventos que reiniciam o contador de inatividade
+const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+
+function setupActivityListeners() {
+    activityEvents.forEach(event => {
+        window.addEventListener(event, resetInactivityTimer, true);
+    });
 }
 
-.login-card h2 {
-    color: #04396d;
-    margin-top: 0;
-    font-size: 24px;
+function removeActivityListeners() {
+    activityEvents.forEach(event => {
+        window.removeEventListener(event, resetInactivityTimer, true);
+    });
 }
 
-.login-card p {
-    color: #555;
-    margin-bottom: 30px;
-    font-size: 16px;
+
+// --- LÓGICA DE RENDERIZAÇÃO DO CONTEÚDO PRINCIPAL ---
+function renderModuleSelection() {
+    // Exemplo de como renderizar os módulos na tela principal
+    appContainer.innerHTML = `
+        <h2 class="page-title">Bem-vindo(a)! Selecione um módulo para começar.</h2>
+        <div class="module-selection">
+            <div class="module-card">
+                <div class="module-card-icon"><span>📅</span></div>
+                <div class="module-card-text">
+                    <h3>Agendamentos</h3>
+                    <p>Gerenciar consultas e horários.</p>
+                </div>
+            </div>
+            <div class="module-card">
+                <div class="module-card-icon"><span>👥</span></div>
+                <div class="module-card-text">
+                    <h3>Pacientes</h3>
+                    <p>Visualizar prontuários e informações.</p>
+                </div>
+            </div>
+            </div>
+    `;
 }
 
-.login-card .login-button {
-    background-color: #04396d;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    height: 44px;
-    padding: 0 30px;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s;
-}
+// --- CONTROLE PRINCIPAL DE AUTENTICAÇÃO E EVENTOS ---
 
-.login-card .login-button:hover {
-    background-color: #032b50;
-    transform: scale(1.02);
-}
+// Função que monitora o estado da autenticação do usuário
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // --- USUÁRIO ESTÁ LOGADO ---
+        console.log("Usuário logado:", user.email);
 
-/* --- Estilos do Portal Principal (Pós-Login) --- */
+        // Atualiza a interface
+        userInfo.textContent = user.displayName || user.email; // Mostra o nome ou o email
+        authView.classList.add('hidden');    // Esconde a tela de login
+        appView.classList.remove('hidden'); // Mostra a tela principal do app
 
-.top-bar {
-    /* ... (nenhuma alteração aqui) ... */
-    width: 100%; background-color: #ffffff; color: #333; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; 
-}
-.top-bar h1 { margin: 0; font-size: 1.8em; color: #04396d; }
-.top-bar #user-info { font-weight: bold; margin-right: 15px; }
-.top-bar #logout-button { background-color: transparent; border: 1px solid #04396d; color: #04396d; padding: 8px 16px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: all 0.2s; }
-.top-bar #logout-button:hover { background-color: #04396d; color: white; }
+        // Renderiza o conteúdo principal da aplicação
+        renderModuleSelection();
 
-.content { flex-grow: 1; padding: 30px; }
-.page-title { font-size: 28px; color: #04396d; margin-top: 0; margin-bottom: 20px; font-weight: bold; }
-.module-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-.module-card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 25px; text-align: left; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 20px; }
-.module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
-.module-card-icon { flex-shrink: 0; width: 48px; height: 48px; background-color: #eef5ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #04396d; }
-.module-card-text h3 { margin: 0 0 5px 0; color: #04396d; font-size: 18px; }
-.module-card-text p { margin: 0; color: #666; font-size: 14px; }
+        // Inicia o monitoramento de inatividade
+        setupActivityListeners();
+        resetInactivityTimer();
+
+    } else {
+        // --- USUÁRIO ESTÁ DESLOGADO ---
+        console.log("Nenhum usuário logado.");
+
+        // Atualiza a interface
+        authView.classList.remove('hidden'); // Mostra a tela de login
+        appView.classList.add('hidden');     // Esconde a tela principal do app
+        
+        // Garante que a mensagem e o botão de login estejam visíveis
+        authMessage.textContent = 'Por favor, faça o login para continuar.';
+        loginButton.classList.remove('hidden'); // <-- MUITO IMPORTANTE: Mostra o botão
+
+        // Para o monitoramento de inatividade
+        stopInactivityTimer();
+        removeActivityListeners();
+    }
+});
+
+
+// --- EVENT LISTENERS PARA BOTÕES ---
+
+// Evento de clique para o botão de LOGIN
+loginButton.addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    // signInWithRedirect é recomendado para uma melhor experiência em dispositivos móveis
+    signInWithRedirect(auth, provider);
+});
+
+// Evento de clique para o botão de LOGOUT
+logoutButton.addEventListener('click', () => {
+    signOut(auth).catch((error) => {
+        console.error("Erro ao fazer logout:", error);
+    });
+});
