@@ -3,53 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <title>Intranet EuPsico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 20px; text-align: center; }
-        .app-container { max-width: 800px; margin: auto; }
+        :root {
+            --primary-blue: #004a7f;
+            --light-blue: #eaf2f8;
+            --text-color: #333;
+            --text-light: #6c757d;
+            --bg-color: #f8f9fa;
+            --white-color: #fff;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         .view { display: none; }
         .visible { display: block; }
-        .content-box { background-color: white; padding: 25px 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 20px; text-align: left; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #ddd; }
-        #login-button { background-color: #004a7f; color: white; border: none; font-size: 1.1em; }
-        #logout-button { background-color: #6c757d; color: white; border: none; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
-        .user-info { display: flex; align-items: center; }
-        .user-info img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
-        .user-info span { font-weight: bold; }
-        #nav-links a, #nav-links button { display: block; width: 100%; margin: 10px 0; text-align: left; background-color: #f1f1f1; border: 1px solid #ddd; padding: 15px; text-decoration: none; color: #333; font-size: 1em; }
-        #nav-links a:hover, #nav-links button:hover { background-color: #e0e0e0; }
+        .content-box {
+            background-color: var(--white-color);
+            padding: 25px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-top: 20px;
+        }
+
+        /* --- Estilo do Cabeçalho --- */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 2px solid var(--light-blue);
+        }
+        .main-header h1 {
+            font-size: 1.8em;
+            color: var(--primary-blue);
+            margin: 0;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-profile img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+        }
+        .user-profile span {
+            font-weight: 500;
+        }
+        #logout-button {
+            background-color: transparent;
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        #logout-button:hover {
+            background-color: var(--primary-blue);
+            color: var(--white-color);
+        }
+
+        /* --- Estilo da Tela de Login --- */
+        #login-view {
+            text-align: center;
+            max-width: 450px;
+            margin: 50px auto;
+        }
+        #login-button {
+            background-color: var(--primary-blue);
+            color: var(--white-color);
+            border: none;
+            font-size: 1.1em;
+            padding: 12px 25px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* --- Estilo dos Módulos --- */
+        .modules-title {
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            color: var(--primary-blue);
+            text-align: left;
+        }
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .module-card {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+        .card-icon {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--light-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-icon svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--primary-blue);
+        }
+        .card-content h3 {
+            margin: 0 0 5px 0;
+            color: var(--primary-blue);
+            font-size: 1.2em;
+        }
+        .card-content p {
+            margin: 0;
+            font-size: 0.95em;
+            color: var(--text-light);
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
 
-        <div id="login-view" class="view" style="text-align: center;">
-             <div class="content-box">
-                <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
-                <h2>Intranet EuPsico</h2>
-                <p>Por favor, faça login para continuar.</p>
-                <button id="login-button">Login com Google</button>
-            </div>
+        <div id="login-view" class="view content-box">
+            <img src="https://i.ibb.co/JwdDSZx/Cabe-a-ho.png" alt="Logo EuPsico" style="max-width: 300px; margin-bottom: 20px;">
+            <h2>Intranet EuPsico</h2>
+            <p>Por favor, faça login para continuar.</p>
+            <button id="login-button">Login com Google</button>
         </div>
 
         <div id="loading-view" class="view">
-            <p>Verificando autenticação...</p>
+            <p style="text-align:center;">Verificando autenticação...</p>
         </div>
         
-        <div id="dashboard-view" class="view content-box">
-            <div class="header">
-                <div class="user-info">
+        <div id="dashboard-view" class="view">
+            <header class="main-header">
+                <h1>Intranet EuPsico</h1>
+                <div class="user-profile">
                     <img id="user-photo" src="" alt="Foto">
-                    <span id="user-name"></span>
+                    <span id="user-email"></span>
+                    <button id="logout-button">Sair</button>
                 </div>
-                <button id="logout-button">Sair</button>
-            </div>
-            <h2>Painel de Acesso</h2>
-            <p>Selecione a área que deseja acessar:</p>
-            <div id="nav-links">
+            </header>
+            
+            <h2 class="modules-title">Módulos da Intranet</h2>
+            <div id="nav-links" class="modules-grid">
                 </div>
         </div>
-
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -74,7 +202,7 @@
             const loginButton = document.getElementById('login-button');
             const logoutButton = document.getElementById('logout-button');
             const userPhoto = document.getElementById('user-photo');
-            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
             const navLinks = document.getElementById('nav-links');
 
             function showView(viewId) {
@@ -90,7 +218,7 @@
                         renderDashboard(user, funcoes);
                         showView('dashboard-view');
                     } else {
-                        document.body.innerHTML = `<div class="content-box" style="max-width: 800px; margin: auto; text-align: center;"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões definidas. Contate o administrador.</p><button onclick="firebase.auth().signOut()">Sair</button></div>`;
+                        document.body.innerHTML = `<div class="content-box" style="max-width: 800px; margin: 50px auto; text-align: center;"><h2>Acesso Negado</h2><p>Você está autenticado, mas seu usuário não tem permissões definidas. Contate o administrador.</p><button onclick="firebase.auth().signOut()">Sair</button></div>`;
                     }
                 } else {
                     showView('login-view');
@@ -98,54 +226,71 @@
             });
 
             function renderDashboard(user, funcoes) {
-                userPhoto.src = user.photoURL || '';
-                userName.textContent = user.displayName || 'Usuário';
+                userPhoto.src = user.photoURL || 'https://i.ibb.co/61Ym24n/default-user.png';
+                userEmail.textContent = user.email;
                 navLinks.innerHTML = '';
 
-                // Mapeamento de todas as áreas disponíveis
-                const areas = {
-                    intranet: { titulo: '🌐 Intranet Geral', url: 'URL_DA_INTRANET_GERAL_AQUI', roles: ['admin', 'todos'] }, // 'todos' é uma role imaginária para acesso geral
-                    administrativo: { titulo: '📁 Administrativo', url: '#', roles: ['admin', 'administrativo'] },
-                    captacao: { titulo: '🎯 Captação', url: '#', roles: ['admin', 'captacao'] },
-                    financeiro: { titulo: '💰 Financeiro', url: './painel.html', roles: ['admin', 'financeiro'] },
-                    grupos: { titulo: '👨‍👩‍👧‍👦 Grupos', url: '#', roles: ['admin', 'grupos'] },
-                    marketing: { titulo: '📈 Marketing', url: '#', roles: ['admin', 'marketing'] },
-                    plantao: { titulo: '📞 Plantão', url: '#', roles: ['admin', 'plantao'] },
-                    rh: { titulo: '👥 Recursos Humanos', url: '#', roles: ['admin', 'rh'] },
-                    servico_social: { titulo: '🤝 Serviço Social', url: '#', roles: ['admin', 'servico_social'] },
-                    supervisao: { titulo: '👨‍🏫 Supervisão', url: '#', roles: ['admin', 'supervisao'] },
+                // Ícones SVG para cada módulo
+                const icons = {
+                    intranet: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12c0-5.25-4.25-9.5-9.5-9.5S2.5 6.75 2.5 12s4.25 9.5 9.5 9.5s9.5-4.25 9.5-9.5Z"/><path d="M12 2.5v19"/><path d="M2.5 12h19"/></svg>`,
+                    administrativo: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+                    captacao: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
+                    financeiro: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+                    gestao: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+                    grupos: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+                    marketing: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`,
+                    plantao: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+                    rh: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
+                    servico_social: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+                    supervisao: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
                 };
 
-                let botoesParaMostrar = [];
+                const areas = {
+                    intranet: { titulo: 'Intranet Geral', descricao: 'Avisos, notícias e informações para todos.', url: 'URL_DA_INTRANET_GERAL_AQUI', roles: ['todos'], icon: icons.intranet },
+                    administrativo: { titulo: 'Intranet Administrativo', descricao: 'Processos, documentos e organização.', url: '#', roles: ['admin', 'administrativo'], icon: icons.administrativo },
+                    captacao: { titulo: 'Intranet Captação', descricao: 'Ferramentas e informações para captação.', url: '#', roles: ['admin', 'captacao'], icon: icons.captacao },
+                    financeiro: { titulo: 'Intranet Financeiro', descricao: 'Painel de controle financeiro e relatórios.', url: './painel.html', roles: ['admin', 'financeiro'], icon: icons.financeiro },
+                    gestao: { titulo: 'Intranet Gestão', descricao: 'Relatórios gerenciais e planejamento.', url: '#', roles: ['admin', 'gestao'], icon: icons.gestao },
+                    grupos: { titulo: 'Intranet Grupos', descricao: 'Informações e materiais para grupos.', url: '#', roles: ['admin', 'grupos'], icon: icons.grupos },
+                    marketing: { titulo: 'Intranet Marketing', descricao: 'Materiais de marketing e campanhas.', url: '#', roles: ['admin', 'marketing'], icon: icons.marketing },
+                    plantao: { titulo: 'Intranet Plantão', descricao: 'Escalas, contatos e procedimentos.', url: '#', roles: ['admin', 'plantao'], icon: icons.plantao },
+                    rh: { titulo: 'Intranet RH', descricao: 'Recursos humanos, vagas e comunicados.', url: '#', roles: ['admin', 'rh'], icon: icons.rh },
+                    servico_social: { titulo: 'Intranet Serviço Social', descricao: 'Documentos e orientações do S.S.', url: '#', roles: ['admin', 'servico_social'], icon: icons.servico_social },
+                    supervisao: { titulo: 'Intranet Supervisão', descricao: 'Acompanhamento de equipes e feedback.', url: '#', roles: ['admin', 'supervisao'], icon: icons.supervisao },
+                };
 
-                // Adiciona os botões que o usuário tem permissão para ver
+                let cardsParaMostrar = [];
+
                 for (const key in areas) {
                     const area = areas[key];
-                    // O usuário vê o link se for admin ou se tiver alguma das roles necessárias para aquela área
-                    const temPermissao = funcoes.includes('admin') || area.roles.some(role => funcoes.includes(role));
-                    
+                    const temPermissao = funcoes.includes('admin') || area.roles.includes('todos') || area.roles.some(role => funcoes.includes(role));
                     if (temPermissao) {
-                        botoesParaMostrar.push(area);
+                        cardsParaMostrar.push(area);
                     }
                 }
 
-                // Ordena os botões em ordem alfabética pelo título, exceto a Intranet Geral que fica primeiro
-                botoesParaMostrar.sort((a, b) => {
+                cardsParaMostrar.sort((a, b) => {
                     if (a.titulo.includes('Intranet Geral')) return -1;
                     if (b.titulo.includes('Intranet Geral')) return 1;
                     return a.titulo.localeCompare(b.titulo);
                 });
                 
-                // Cria os elementos <a> e os adiciona na tela
-                botoesParaMostrar.forEach(config => {
-                    const link = document.createElement('a');
-                    link.textContent = config.titulo;
-                    link.href = config.url;
-                    // Abre em nova aba se não for um link interno simples
-                    if (config.url.startsWith('http') || config.url.endsWith('.html')) {
-                        link.target = '_blank';
+                cardsParaMostrar.forEach(config => {
+                    const card = document.createElement('a');
+                    card.href = config.url;
+                    card.className = 'module-card';
+                    if (config.url !== '#') {
+                        card.target = '_blank';
                     }
-                    navLinks.appendChild(link);
+
+                    card.innerHTML = `
+                        <div class="card-icon">${config.icon}</div>
+                        <div class="card-content">
+                            <h3>${config.titulo}</h3>
+                            <p>${config.descricao}</p>
+                        </div>
+                    `;
+                    navLinks.appendChild(card);
                 });
             }
 
@@ -158,9 +303,7 @@
                 });
             });
 
-            logoutButton.addEventListener('click', () => {
-                auth.signOut();
-            });
+            logoutButton.addEventListener('click', () => auth.signOut());
 
             showView('loading-view');
         });
